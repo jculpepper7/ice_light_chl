@@ -47,3 +47,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Ignore data files
+# These will be pulled in directly from an online source in the final version.
+
+*.csv
+*.jpeg
+*.png
+*.xlsx
