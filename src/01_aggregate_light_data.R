@@ -385,6 +385,7 @@ comp_tbl_df <- par_sum_wide %>%
     perc_par_no_snow = snow_removed/surface_air
   )
 
+#write_csv(comp_tbl_df, here('data/comparison_table.csv'))
 
 
 #**7b. Means Table ----
