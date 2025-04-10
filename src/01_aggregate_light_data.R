@@ -4,6 +4,7 @@
 # Libraries ---------------------------------------------------------------
 
 library(tidyverse)
+library(lubridate)
 library(here)
 library(janitor)
 library(ggtext)
@@ -21,7 +22,7 @@ par_ple_25 <- read_csv(here('data/light/paint_east_par_2025.csv'))
 par_plw_25 <- read_csv(here('data/light/paint_west_par_2025.csv'))
 
 #Ice quality data
-ice_qual_raw <- read_csv(here('data/ice/ice_quality.csv'))
+ice_qual_raw <- read_csv(here('data/ice/ice_quality_update.csv'))
 
 # 2. Clean data -----------------------------------------------------------
 
@@ -255,8 +256,11 @@ par_sum_wide <- par_ice %>%
 par_ice_wide_df <- par_sum_wide %>% 
   group_by(site, date, year) %>% 
   summarise(
-    perc_blk = black_ice_cm/total_ice_cm,
-    perc_wht = white_ice_cm/total_ice_cm,
+    perc_blk_tot = black_ice_cm/total_ice_cm,
+    perc_blk_sheet = black_ice_cm/ice_sheet_cm,
+    perc_wht_tot = white_ice_cm/total_ice_cm,
+    perc_wht_sheet = white_ice_cm/ice_sheet_cm,
+    perc_wht_slush = wht_slush_cm/ice_sheet_cm,
     perc_trans_air = iw_int/air,
     perc_trans_surf = iw_int/surface_air,
     perc_par_no_snow = snow_removed/surface_air
@@ -289,7 +293,7 @@ ggplot(data = par_ice_wide_df)+
 
 #**Boxplot: white ice %----
 ggplot(data = par_ice_wide_df)+
-  geom_boxplot(aes(x = year, y = perc_wht, fill = site))+
+  geom_boxplot(aes(x = year, y = perc_wht_tot, fill = site))+
   theme_classic()+
   theme(
     legend.title = element_blank(),
@@ -355,3 +359,84 @@ ggplot(data = par_ice_wide_df)+
 #   height = 5,
 #   units = 'in'
 # )
+
+
+# 7. Value Table ----------------------------------------------------------
+
+#**7a. Comparison Table----
+comp_tbl_df <- par_sum_wide %>% 
+  group_by(site, date, year) %>% 
+  summarise(
+    ice_sheet_cm = ice_sheet_cm,
+    total_ice_cm = total_ice_cm,
+    black_ice_cm = black_ice_cm,
+    white_ice_cm = white_ice_cm,
+    wht_slush_cm = wht_slush_cm,
+    n_white = n_white,
+    n_slush = n_slush,
+    snow_avg_cm = snow_avg_cm,
+    perc_blk_tot = black_ice_cm/total_ice_cm,
+    perc_blk_sheet = black_ice_cm/ice_sheet_cm,
+    perc_wht_tot = white_ice_cm/total_ice_cm,
+    perc_wht_sheet = white_ice_cm/ice_sheet_cm,
+    perc_wht_slush = wht_slush_cm/ice_sheet_cm,
+    perc_trans_air = iw_int/air,
+    perc_trans_surf = iw_int/surface_air,
+    perc_par_no_snow = snow_removed/surface_air
+  )
+
+
+
+#**7b. Means Table ----
+
+mean_tbl_df <- comp_tbl_df %>% 
+  group_by(site, year) %>%
+  summarise(
+    ice_sheet_cm = mean(ice_sheet_cm, na.rm = T),
+    total_ice_cm = mean(total_ice_cm, na.rm = T),
+    black_ice_cm = mean(black_ice_cm, na.rm = T),
+    white_ice_cm = mean(white_ice_cm, na.rm = T),
+    wht_slush_cm = mean(wht_slush_cm, na.rm = T),
+    n_white = mean(n_white, na.rm = T),
+    n_slush = mean(n_slush, na.rm = T),
+    snow_avg_cm = mean(snow_avg_cm, na.rm = T),
+    perc_blk_tot = mean(perc_blk_tot, na.rm = T),
+    perc_blk_sheet = mean(perc_blk_sheet, na.rm = T),
+    perc_wht_tot = mean(perc_wht_tot, na.rm = T),
+    perc_wht_sheet = mean(perc_wht_sheet, na.rm = T),
+    perc_wht_slush = mean(perc_wht_slush, na.rm = T),
+    perc_trans_air = mean(perc_trans_air, na.rm = T),
+    perc_trans_surf = mean(perc_trans_surf, na.rm = T),
+    perc_par_no_snow = mean(perc_par_no_snow, na.rm = T)
+  )
+
+#write_csv(mean_tbl_df, here('data/mean_table.csv'))
+
+
+
+# 8. Wilcoxon Test --------------------------------------------------------
+
+
+# x <- tibble(value = rnorm(100, mean = 0, sd = 1)) %>% 
+#   mutate(
+#     type = as.factor('A')
+#   )
+# y <- tibble(value = rnorm(100, mean = 10, sd = 1)) %>% 
+#   mutate(
+#     type = as.factor('B')
+#   )
+# 
+# test <- x %>% 
+#   bind_rows(y)
+# 
+# ggplot(data = test)+
+#   geom_boxplot(aes(x = type, y = value))
+# 
+# res <- wilcox.test(
+#   data = test,
+#   value ~ type,
+#   exact = F
+# )
+# 
+# res
+# res$p.value #p.value <0.05, 
