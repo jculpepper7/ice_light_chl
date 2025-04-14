@@ -292,7 +292,7 @@ ggplot(data = par_ice_wide_df)+
 # )
 
 #**Boxplot: white ice %----
-ggplot(data = par_ice_wide_df)+
+ggplot(data = par_ice_wide_df %>% filter(year == 2025))+
   geom_boxplot(aes(x = year, y = perc_wht_tot, fill = site))+
   theme_classic()+
   theme(
@@ -304,10 +304,11 @@ ggplot(data = par_ice_wide_df)+
     y = 'White Ice (%)') +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
+        legend.position = 'bottom'
   )
 
 # ggsave(
-#   here('output/data_viz/perc_wht_box.png'),
+#   here('output/data_viz/perc_wht_box_2025.png'),
 #   dpi = 300,
 #   width = 7,
 #   height = 5,
@@ -338,7 +339,7 @@ ggplot(data = par_ice_wide_df)+
 # )
 
 #**Boxplot: PAR -  No Snow %----
-ggplot(data = par_ice_wide_df)+
+ggplot(data = par_ice_wide_df %>% filter(year == 2025))+
   geom_boxplot(aes(x = year, y = perc_par_no_snow, fill = site))+
   theme_classic()+
   theme(
@@ -350,15 +351,16 @@ ggplot(data = par_ice_wide_df)+
     y = 'PAR - No Snow (%)') +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
+        legend.position = 'bottom'
   )
 
-# ggsave(
-#   here('output/data_viz/perc_par_no_snow_box.png'),
-#   dpi = 300,
-#   width = 7,
-#   height = 5,
-#   units = 'in'
-# )
+ggsave(
+  here('output/data_viz/perc_par_no_snow_box_2025.png'),
+  dpi = 300,
+  width = 7,
+  height = 5,
+  units = 'in'
+)
 
 
 # 7. Value Table ----------------------------------------------------------

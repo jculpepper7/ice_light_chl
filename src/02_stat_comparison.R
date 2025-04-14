@@ -81,3 +81,10 @@ library(FSA)
 dunnTest(data = tbl %>% filter(year == 2025),
          perc_par_no_snow~site,
                      method = 'bonferroni')
+
+library(rstatix)
+test <- tbl %>% 
+  group_by(site, year) %>% 
+  get_summary_stats(type = 'median_iqr')
+tst
+test
