@@ -325,13 +325,13 @@ ggplot(data = par_ice_wide_df)+
         axis.title.y = element_markdown(),
   )
 
-# ggsave(
-#   here('output/data_viz/perc_par_trans_box.png'),
-#   dpi = 300,
-#   width = 7,
-#   height = 5,
-#   units = 'in'
-# )
+ggsave(
+  here('output/data_viz/perc_par_trans_box.png'),
+  dpi = 300,
+  width = 7,
+  height = 5,
+  units = 'in'
+)
 
 #**Boxplot: PAR -  No Snow %----
 ggplot(data = par_ice_wide_df)+
