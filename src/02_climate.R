@@ -76,7 +76,11 @@ met_data_clean <- beatrice %>%
   mutate(
     station = as.factor(station_name),
     climate_id = as.factor(climate_id),
-    date = ymd(date_time)
+    date = ymd(date_time),
+    year = as.numeric(year),
+    w_year = if_else(
+      month(date) >= 10, year+1, year
+    )
   ) %>%
   #Remove unnecessary columns
   select(
@@ -106,7 +110,7 @@ ggplot(data = met_data_clean)+
   facet_wrap(~station, ncol = 1)
 
 
-# 4. Seaasonal summaries ----------------------------------------------------
+# 4. Seasonal summaries ----------------------------------------------------
 
 met_seasonal <- met_data_clean %>% 
   filter(
@@ -123,7 +127,7 @@ met_seasonal <- met_data_clean %>%
       )
     )
   ) %>% 
-  group_by(station, year, season) %>% 
+  group_by(station, w_year, season) %>% 
   summarise(
     max_temp_c = mean(max_temp_c, na.rm = T),
     min_temp_c = mean(min_temp_c, na.rm = T),
@@ -132,35 +136,34 @@ met_seasonal <- met_data_clean %>%
     cool_deg_days_c = mean(cool_deg_days_c, na.rm = T),
     total_precip_mm = mean(total_precip_mm, na.rm = T),
     snow_on_grnd_cm = mean(snow_on_grnd_cm, na.rm = T),
-    
   )
 
 ggplot(data = met_seasonal %>% filter(season == 'fall'))+
   geom_point(
-    aes(x = year, y = mean_temp_c, color = station)
+    aes(x = w_year, y = mean_temp_c, color = station)
   )+
   geom_smooth(
-    aes(x = year, y = mean_temp_c, color = station), 
+    aes(x = w_year, y = mean_temp_c, color = station), 
     method = 'lm', 
     se = F
   )
   
 ggplot(data = met_seasonal %>% filter(season == 'winter'))+
   geom_point(
-    aes(x = year, y = mean_temp_c, color = station)
+    aes(x = w_year, y = mean_temp_c, color = station)
   )+
   geom_smooth(
-    aes(x = year, y = mean_temp_c, color = station), 
+    aes(x = w_year, y = mean_temp_c, color = station), 
     method = 'lm', 
     se = F
   )
 
 ggplot(data = met_seasonal %>% filter(season == 'spring'))+
   geom_point(
-    aes(x = year, y = mean_temp_c, color = station)
+    aes(x = w_year, y = mean_temp_c, color = station)
   )+
   geom_smooth(
-    aes(x = year, y = mean_temp_c, color = station), 
+    aes(x = w_year, y = mean_temp_c, color = station), 
     #method = 'lm', 
     se = F
   )
@@ -174,7 +177,7 @@ ggplot(data = met_seasonal)+
     # aes(x = year, y = snow_on_grnd_cm, color = station)
     # aes(x = year, y = total_precip_mm, color = station) #Precip seems far too low at both stations given the snow on ground amounts (in cm)
     # aes(x = year, y = heat_deg_days_c, color = station)
-    aes(x = year, y = cool_deg_days_c, color = station)
+    aes(x = w_year, y = cool_deg_days_c, color = station)
   )+
   geom_smooth(
     # aes(x = year, y = mean_temp_c, color = station),
@@ -183,7 +186,7 @@ ggplot(data = met_seasonal)+
     # aes(x = year, y = snow_on_grnd_cm, color = station),
     # aes(x = year, y = total_precip_mm, color = station),
     # aes(x = year, y = heat_deg_days_c, color = station),
-    aes(x = year, y = cool_deg_days_c, color = station),
+    aes(x = w_year, y = cool_deg_days_c, color = station),
     method = 'lm', 
     se = F
   ) +
@@ -206,13 +209,13 @@ ggplot(data = met_seasonal)+
     legend.title = element_blank()
   )
   
-ggsave(
-  here('output/data_viz/cooling_degree_days.pdf'),
-  dpi = 300,
-  width = 5,
-  height = 7,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/cooling_degree_days.pdf'),
+#   dpi = 300,
+#   width = 5,
+#   height = 7,
+#   units = 'in'
+# )  
 
 
 # 5. Seasonal anomalies ---------------------------------------------------
@@ -232,15 +235,31 @@ season_anom <- met_seasonal %>%
     total_snow_cm = mean(snow_on_grnd_cm, na.rm = T),
     snow_anom_cm = snow_on_grnd_cm - total_snow_cm,
     col_4 = as.factor(if_else(snow_anom_cm > 0, 2,1))
+  ) %>% 
+  mutate_if(
+    is.numeric, round(digits = 2)
   )
 
 #Seasonal anomaly viz
 
-ggplot(data = season_anom %>% filter(season == 'spring'))+
+ggplot(data = season_anom %>% filter(season == 'winter'))+
   geom_bar(
-    aes(x = year, y = snow_anom_cm, fill = col_4),
+    aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
+    # aes(x = w_year, y = min_anom_temp_c, fill = col_2),
+    # aes(x = w_year, y = max_anom_temp_c, fill = col_3),
+    # aes(x = w_year, y = snow_anom_cm, fill = col_4),
     stat = 'identity',
-    show.legend = F
+    show.legend = F,
+    alpha = 0.5
+  )+
+  geom_text(
+    aes(
+      x = w_year, 
+      y = mean_anom_temp_c, 
+      label = mean_anom_temp_c,
+      vjust = 0.5 - sign(mean_anom_temp_c)/2
+    ),
+    #position = position_dodge(width = 0.9) 
   )+
   geom_hline(yintercept=0, size=0.5)+
   facet_wrap(
@@ -252,11 +271,11 @@ ggplot(data = season_anom %>% filter(season == 'spring'))+
                             'beatrice' = 'Beatrice'
                           ))
   )+
-  scale_fill_manual(values=c('red','blue'))+
+  scale_fill_manual(values=c('blue','red'))+
   theme_classic()+
   xlab('')+
   #Change to match variable above
-  ylab('Snow Anomaly (cm)')+
+  ylab('Mean Temp. Anomaly (cm)')+
   theme(
     text = element_text(size = 15)
   )
@@ -264,16 +283,10 @@ ggplot(data = season_anom %>% filter(season == 'spring'))+
 ggsave(
   here('output/data_viz/snow_anom_spring.png'),
   dpi = 300,
-  width = 6.5,
-  height = 4.5,
+  width = 9,
+  height = 7,
   units = 'in'
 )  
 
-# 6. Seasonal trend analysis ----------------------------------------------
 
-test <- season_anom %>% 
-  filter(
-    season == 'spring' | season == 'winter'
-  ) %>% 
-  select(station, year, mean_anom_temp_c, max_anom_temp_c, min_anom_temp_c, snow_anom_cm)
-  
+

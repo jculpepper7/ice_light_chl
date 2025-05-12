@@ -8,6 +8,7 @@ library(lubridate)
 library(here)
 library(janitor)
 library(ggtext)
+library(scales)
 
 # 1. Import data ----------------------------------------------------
 
@@ -241,17 +242,21 @@ par_ice <- par %>%
 
 #**Summarise data----
 
-# par_sum <- par_ice %>% 
-#   group_by(site, date, year) %>% 
-#   summarise(
-#     perc_blk = black_ice_cm/total_ice_cm,
-#     perc_wht = white_ice_cm/total_ice_cm
-#   ) %>% 
-#   slice(1)
 
 par_sum_wide <- par_ice %>% 
   select(-air_par) %>% 
-  pivot_wider(names_from = 'depth', values_from = 'par') 
+  pivot_wider(names_from = 'depth', values_from = 'par') %>% 
+  mutate(
+    par_trans = iw_int/air,
+    snow_removed = if_else(
+      is.na(snow_removed), iw_int, snow_removed
+    ),
+    par_trans_no_snow = snow_removed/air,
+    blk_ratio = black_ice_cm/ice_sheet_cm,
+    wht_ratio = wht_slush_cm/ice_sheet_cm
+  )
+
+write_csv(par_sum_wide, here('data/combined_data/par_ice.csv'))
 
 par_ice_wide_df <- par_sum_wide %>% 
   group_by(site, date, year) %>% 
@@ -270,7 +275,7 @@ par_ice_wide_df <- par_sum_wide %>%
 
 #**Boxplot: black ice %----
 ggplot(data = par_ice_wide_df)+
-  geom_boxplot(aes(x = year, y = perc_blk, fill = site))+
+  geom_boxplot(aes(x = year, y = perc_blk_tot, fill = site))+
   theme_classic()+
   theme(
     legend.title = element_blank(),
@@ -292,7 +297,7 @@ ggplot(data = par_ice_wide_df)+
 # )
 
 #**Boxplot: white ice %----
-ggplot(data = par_ice_wide_df %>% filter(year == 2025))+
+ggplot(data = par_ice_wide_df )+
   geom_boxplot(aes(x = year, y = perc_wht_tot, fill = site))+
   theme_classic()+
   theme(
@@ -330,16 +335,16 @@ ggplot(data = par_ice_wide_df)+
         axis.title.y = element_markdown(),
   )
 
-ggsave(
-  here('output/data_viz/perc_par_trans_box.png'),
-  dpi = 300,
-  width = 7,
-  height = 5,
-  units = 'in'
-)
+# ggsave(
+#   here('output/data_viz/perc_par_trans_box.png'),
+#   dpi = 300,
+#   width = 7,
+#   height = 5,
+#   units = 'in'
+# )
 
 #**Boxplot: PAR -  No Snow %----
-ggplot(data = par_ice_wide_df %>% filter(year == 2025))+
+ggplot(data = par_ice_wide_df )+
   geom_boxplot(aes(x = year, y = perc_par_no_snow, fill = site))+
   theme_classic()+
   theme(
@@ -354,13 +359,13 @@ ggplot(data = par_ice_wide_df %>% filter(year == 2025))+
         legend.position = 'bottom'
   )
 
-ggsave(
-  here('output/data_viz/perc_par_no_snow_box_2025.png'),
-  dpi = 300,
-  width = 7,
-  height = 5,
-  units = 'in'
-)
+# ggsave(
+#   here('output/data_viz/perc_par_no_snow_box_2025.png'),
+#   dpi = 300,
+#   width = 7,
+#   height = 5,
+#   units = 'in'
+# )
 
 
 # 7. Value Table ----------------------------------------------------------
@@ -387,7 +392,7 @@ comp_tbl_df <- par_sum_wide %>%
     perc_par_no_snow = snow_removed/surface_air
   )
 
-#write_csv(comp_tbl_df, here('data/comparison_table.csv'))
+write_csv(comp_tbl_df, here('data/combined_data/comparison_table.csv'))
 
 
 #**7b. Means Table ----
@@ -416,30 +421,194 @@ mean_tbl_df <- comp_tbl_df %>%
 #write_csv(mean_tbl_df, here('data/mean_table.csv'))
 
 
+# 7. Scatter plots --------------------------------------------------------
 
-# 8. Wilcoxon Test --------------------------------------------------------
+
+# **7a. Plot function -----------------------------------------------------
+
+plt_func <- function(
+    plt_df, 
+    var_ind, 
+    var_dep, 
+    x_name = '', 
+    y_name = ''
+  ) {
+  
+  ggplot(data = plt_df)+
+    geom_point(
+      aes(
+        x = {{var_ind}}, 
+        y = {{var_dep}}, 
+        color = site,
+        shape = year
+      ),
+      size = 3,
+      alpha = 0.7
+    )+
+    theme_classic()+
+    scale_color_viridis_d(
+      labels = c('Paint Deep', 'Paint Shallow', 'Kempenfelt Bay')
+    )+
+    theme(
+      legend.position = 'bottom',
+      legend.box = 'vertical',
+      legend.margin = margin(),
+      legend.title = element_blank(),
+      text = element_text(size = 15)
+    )+
+    #labs(x = 'Ice Thickness (cm)', y = expression('PAR w/o Snow (\u03bcmol ' ~m^-2 ~s^-1* ')'))+
+    labs(x = x_name, y = y_name)+
+    scale_y_continuous(labels = percent_format())
+}
+
+# **7b. PAR ~ Snow --------------------------------------------------------
+
+# ggplot(data = par_sum_wide)+
+#   geom_point(
+#     aes(
+#       x = snow_avg_cm, 
+#       y = par_trans,
+#       #y = iw_int, 
+#       color = site,
+#       shape = year
+#     ),
+#     size = 3,
+#     alpha = 0.7
+#   )+
+#   theme_classic()+
+#   scale_color_viridis_d(
+#     labels = c('Paint Deep', 'Paint Shallow', 'Kempenfelt Bay')
+#   )+
+#   # facet_wrap(~year, ncol = 1)+
+#   theme(
+#     legend.position = 'bottom',
+#     legend.title = element_blank(),
+#     text = element_text(size = 15)
+#   )+
+#   labs(
+#     x = 'Snow (cm)',
+#     #y = expression('PAR w/o Snow (\u03bcmol '~m^-2~s^-1* ')')
+#     y = 'PAR (%)'
+#   )+
+#   scale_x_continuous(breaks = seq(0,30,5), limits = c(0,30))
+
+plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = snow_avg_cm, 
+  var_dep = par_trans, 
+  x_name = 'Snow Thickness (cm)', 
+  y_name = 'PAR (%)'
+)
+
+ggsave(
+  here('output/data_viz/par_viz/par_knee_snow.png'),
+  dpi = 300,
+  width = 6.5,
+  height = 6.5,
+  units = 'in'
+)  
 
 
-# x <- tibble(value = rnorm(100, mean = 0, sd = 1)) %>% 
-#   mutate(
-#     type = as.factor('A')
-#   )
-# y <- tibble(value = rnorm(100, mean = 10, sd = 1)) %>% 
-#   mutate(
-#     type = as.factor('B')
-#   )
-# 
-# test <- x %>% 
-#   bind_rows(y)
-# 
-# ggplot(data = test)+
-#   geom_boxplot(aes(x = type, y = value))
-# 
-# res <- wilcox.test(
-#   data = test,
-#   value ~ type,
-#   exact = F
-# )
-# 
-# res
-# res$p.value #p.value <0.05, 
+
+# **7c. PAR ~ Ice thickness -----------------------------------------------
+
+#NOTE: This is the total thickness of the ice sheet (i.e., ice + slush)
+#      We use the PAR transmitted with no snow to determine what is 
+#      passing through the ice sheet alone
+
+plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = ice_sheet_cm, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'Ice Sheet Thickness (cm)', 
+  y_name = 'PAR (%)'
+)
+
+ggsave(
+  here('output/data_viz/par_viz/par_nosnow_ice_thick.png'),
+  dpi = 300,
+  width = 5.5,
+  height = 5.5,
+  units = 'in'
+)  
+
+
+# **7d. PAR ~ White ice thickness  ----------------------------------------
+
+plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = wht_slush_cm, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'White Ice & Slush (cm)', 
+  y_name = 'PAR (%)'
+)
+
+ggsave(
+  here('output/data_viz/par_viz/par_white_ice.png'),
+  dpi = 300,
+  width = 5.5,
+  height = 5.5,
+  units = 'in'
+)  
+
+
+# **7e. PAR ~ White ice fraction ------------------------------------------
+
+par_wht <- plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = wht_ratio, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'White Ice Ratio (%)', 
+  y_name = 'PAR (%)'
+)
+
+par_wht + scale_x_continuous(labels = percent_format())
+
+ggsave(
+  here('output/data_viz/par_viz/par_wht_ratio.png'),
+  dpi = 300,
+  width = 5.5,
+  height = 5.5,
+  units = 'in'
+)  
+
+
+# **7f. PAR ~ Black ice thickness -----------------------------------------
+
+plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = black_ice_cm, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'Black Ice (cm)', 
+  y_name = 'PAR (%)'
+)
+
+ggsave(
+  here('output/data_viz/par_viz/par_blk.png'),
+  dpi = 300,
+  width = 5.5,
+  height = 5.5,
+  units = 'in'
+)  
+
+
+# **7g. PAR ~ Black ice ratio ---------------------------------------------
+
+par_blk <- plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = blk_ratio, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'Black Ice Ratio (%)', 
+  y_name = 'PAR (%)'
+)
+
+par_blk + 
+  scale_x_continuous(labels = percent_format())
+
+ggsave(
+  here('output/data_viz/par_viz/par_blk_ratio.png'),
+  dpi = 300,
+  width = 5.5,
+  height = 5.5,
+  units = 'in'
+)  
