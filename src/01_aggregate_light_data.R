@@ -256,7 +256,7 @@ par_sum_wide <- par_ice %>%
     wht_ratio = wht_slush_cm/ice_sheet_cm
   )
 
-write_csv(par_sum_wide, here('data/combined_data/par_ice.csv'))
+#write_csv(par_sum_wide, here('data/combined_data/par_ice.csv'))
 
 par_ice_wide_df <- par_sum_wide %>% 
   group_by(site, date, year) %>% 
@@ -392,7 +392,7 @@ comp_tbl_df <- par_sum_wide %>%
     perc_par_no_snow = snow_removed/surface_air
   )
 
-write_csv(comp_tbl_df, here('data/combined_data/comparison_table.csv'))
+#write_csv(comp_tbl_df, here('data/combined_data/comparison_table.csv'))
 
 
 #**7b. Means Table ----
@@ -612,3 +612,32 @@ ggsave(
   height = 5.5,
   units = 'in'
 )  
+
+
+
+# 8. Fit exponential decay curves -----------------------------------------
+
+#I might make this it's own script.
+#I'm using the par_sum_wide data which is aggregated 
+#In section "3. combine data"
+library(tidyverse)
+library(broom)
+library(here)
+library(plotly)
+
+#**MODEL: PAR ~ snow depth (cm) ----
+fit2 <- nls(par_trans ~ SSasymp(snow_avg_cm, yf, y0, log_alpha), data = par_sum_wide)
+fit2
+
+y <- qplot(snow_avg_cm, par_trans, data = augment(fit2)) + geom_line(aes(y = .fitted)) 
+
+ggplotly(y)
+
+#**MODEL: PAR ~ white ice thickness ----
+fit3 <- nls(par_trans ~ SSasymp(wht_slush_cm, yf, y0, log_alpha), data = par_sum_wide)
+fit3
+
+z <- qplot(snow_avg_cm, par_trans, data = augment(fit3)) + geom_line(aes(y = .fitted)) 
+
+ggplotly(z)
+
