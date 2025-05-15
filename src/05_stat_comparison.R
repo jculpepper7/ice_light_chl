@@ -77,7 +77,7 @@ wlcx_rslt <- tbl %>%
     #White ice ratio to ice thickness
     perc_wht_tot_p = wilcox.test(perc_wht_tot~year, exact = F)$p.value,
     perc_wht_tot_w = wilcox.test(perc_wht_tot~year, exact = F)$statistic,
-    perc_wht_tot_p = n(),
+    perc_wht_tot_n = n(),
     #White ice ratio to total thickness of ice sheet (i.e., with slush)
     perc_wht_sheet_p = wilcox.test(perc_wht_sheet~year, exact = F)$p.value,
     perc_wht_sheet_w = wilcox.test(perc_wht_sheet~year, exact = F)$statistic,
@@ -100,7 +100,7 @@ wlcx_rslt <- tbl %>%
     perc_par_no_snow_n = n()
   )
 
-#write_csv(wlcx_rslt, here('output/stat_test/wilcox_rslt.csv'))
+write_csv(wlcx_rslt, here('output/stat_test/wilcox_rslt.csv'))
 
 
 # 4. Levene's test --------------------------------------------------------

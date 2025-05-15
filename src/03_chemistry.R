@@ -70,11 +70,11 @@ chem_df <- chem_24_clean %>%
 
 # 4. Quick data viz -------------------------------------------------------
 
-ggplot(data = chem_df %>% filter(analyte_name == 'Nitrogen; total'))+
+ggplot(data = chem_df %>% filter(analyte_name == 'Carbon; dissolved organic'))+
   geom_boxplot(aes(x = lake, y = result, fill = year))+
   geom_jitter(aes(x = lake, y = result), size = 2, alpha = 0.7)+
   theme_classic()+
-  ylab('TN [ug/L]')+
+  ylab('DOC [ug/L]')+
   xlab('')+
   theme(
     text = element_text(size = 15),
@@ -91,6 +91,43 @@ ggsave(
 )
 
 
+# 5. MWU stat test  -------------------------------------------------------
 
+chm_mwu_df <- chem_df %>%
+  group_by(lake, date, analyte_name) %>% 
+  summarize(result=mean(result)) %>% 
+  # distinct(date) %>% 
+  arrange(lake, date) %>% 
+  # count(analyte_name, date, result, year) %>%
+  # mutate(n = +(n > 0)) %>%
+  pivot_wider(
+    names_from = analyte_name, 
+    values_from = result
+  ) %>% 
+  mutate(
+    year = as.factor(year(date))
+  )
 
+chm_mwu_rslt <- chm_mwu_df %>% 
+  group_by(lake) %>% 
+  filter(lake != 'Lake Simcoe') %>% 
+  summarise(
+    #DIC
+    dic_p = wilcox.test(`Carbon; dissolved inorganic` ~year, exact = F)$p.value,
+    dic_w = wilcox.test(`Carbon; dissolved inorganic` ~year, exact = F)$statistic,
+    dic_n = n(),
+    #DOC
+    doc_p = wilcox.test(`Carbon; dissolved organic` ~year, exact = F)$p.value,
+    doc_w = wilcox.test(`Carbon; dissolved organic` ~year, exact = F)$statistic,
+    doc_n = n(),
+    #Total Nitrogen
+    tn_p = wilcox.test(`Nitrogen; total`~year, exact = F)$p.value,
+    tn_w = wilcox.test(`Nitrogen; total`~year, exact = F)$statistic,
+    tn_n = n(),
+    #Total Phosphorus
+    tp_p = wilcox.test(`Phosphorus; total`~year, exact = F)$p.value,
+    tp_W = wilcox.test(`Phosphorus; total`~year, exact = F)$statistic,
+    tp_n = n()
+  )
 
+  

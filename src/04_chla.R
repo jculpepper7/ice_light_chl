@@ -500,3 +500,15 @@ ggsave(
   height = 6.5,
   units = 'in'
 )  
+
+
+# 8. MWU test on chla depth -----------------------------------------------
+
+wlcx_chla_rslt <- chl_par %>% 
+  group_by(site) %>% 
+  summarise(
+    #Total chla concentration
+    chl_z_p = wilcox.test(max_chl_depth~year, exact = F)$p.value,
+    chl_z_w = wilcox.test(max_chl_depth~year, exact = F)$statistic,
+    chl_z_n = n()
+  )

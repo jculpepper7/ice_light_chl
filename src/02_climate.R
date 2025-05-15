@@ -39,7 +39,7 @@ library(janitor)
 met_raw <- 
   list.files(
     path = here('data/climate'), #insert path to met data
-    pattern = "\\.csv$",            #file type to read
+    pattern = "\\.csv$",         #file type to read
     full.names = T
   ) %>% 
   map_df(
@@ -71,36 +71,51 @@ barrie <- met_raw %>%
 
 #Rebind rows
 met_data_clean <- beatrice %>% 
-  bind_rows(barrie) %>% 
-  #Fix column types
+  bind_rows(barrie) %>%
   mutate(
     station = as.factor(station_name),
     climate_id = as.factor(climate_id),
-    date = ymd(date_time),
-    year = as.numeric(year),
-    w_year = if_else(
-      month(date) >= 10, year+1, year
-    )
+    date = ymd(date_time)
   ) %>%
-  #Remove unnecessary columns
   select(
-    -c(station_name, date_time, data_quality, 
-       max_temp_flag, min_temp_flag, mean_temp_flag,
-       heat_deg_days_flag, cool_deg_days_flag, 
-       total_rain_flag, total_snow_flag, total_precip_flag,
-       snow_on_grnd_flag, dir_of_max_gust_flag, spd_of_max_gust_flag)
+    -station_name
   ) %>% 
   #Change the rest of the columns to numeric
   mutate_if(
     is.character, 
     as.numeric
-  ) 
+  ) %>% 
+  #Fix column types
+  mutate(
+    #year = as.numeric(year),
+    w_year = if_else(
+      month(date) >= 10, year+1, year
+    ),
+    total_precip_cm = total_precip_mm/10,
+    total_rain_cm = total_rain_mm/10,
+    rain_cm = if_else(
+      mean_temp_c > 0, total_precip_cm, 0
+    ),
+    snow_cm = if_else(
+      mean_temp_c <= 0, total_precip_cm, 0
+    )
+  ) %>%
+  #Remove unnecessary columns
+  select(
+    -c(date_time, data_quality, 
+       total_rain_mm, total_precip_mm,
+       max_temp_flag, min_temp_flag, mean_temp_flag,
+       heat_deg_days_flag, cool_deg_days_flag, 
+       total_rain_flag, total_snow_flag, total_precip_flag,
+       snow_on_grnd_flag, dir_of_max_gust_flag, spd_of_max_gust_flag)
+  )
+
  
 
 # 3. Visualize daily data -------------------------------------------------
 
 ggplot(data = met_data_clean)+
-  geom_point(aes(x = date, y = mean_temp_c))+
+  geom_point(aes(x = date, y = snow_cm))+
   facet_wrap(~station, ncol = 1)
 
 ggplot(data = met_data_clean)+
@@ -113,17 +128,20 @@ ggplot(data = met_data_clean)+
 # 4. Seasonal summaries ----------------------------------------------------
 
 met_seasonal <- met_data_clean %>% 
-  filter(
-    month == 9 | month == 10 | month == 11 | 
-    month == 12 | month == 1 | month == 2 | 
-    month == 3 | month == 4 | month == 5
-  ) %>% 
+  # filter(
+  #   month == 9 | month == 10 | month == 11 | 
+  #   month == 12 | month == 1 | month == 2 | 
+  #   month == 3 | month == 4 | month == 5
+  # ) %>% 
   mutate(
     season = if_else(
       month == 9 | month == 10 | month == 11, as.factor('fall'),
       if_else(
         month == 12 | month == 1 | month == 2, as.factor('winter'),
-        as.factor('spring')
+        if_else(
+          month == 3 | month == 4 | month == 5, as.factor('spring'),
+          as.factor('summer')
+        )
       )
     )
   ) %>% 
@@ -132,10 +150,14 @@ met_seasonal <- met_data_clean %>%
     max_temp_c = mean(max_temp_c, na.rm = T),
     min_temp_c = mean(min_temp_c, na.rm = T),
     mean_temp_c = mean(mean_temp_c, na.rm = T),
-    heat_deg_days_c = mean(heat_deg_days_c, na.rm = T),
-    cool_deg_days_c = mean(cool_deg_days_c, na.rm = T),
-    total_precip_mm = mean(total_precip_mm, na.rm = T),
+    #heat_deg_days_c = mean(heat_deg_days_c, na.rm = T),
+    #cool_deg_days_c = mean(cool_deg_days_c, na.rm = T),
+    total_precip_cm = mean(total_precip_cm, na.rm = T),
+    rain_sum_cm = sum(rain_cm),
+    #rain_cm = mean(rain_cm, na.rm = T),
     snow_on_grnd_cm = mean(snow_on_grnd_cm, na.rm = T),
+    snow_sum_cm = sum(snow_cm),
+    wind_km_h = mean(spd_of_max_gust_km_h, na.rm = T)
   )
 
 ggplot(data = met_seasonal %>% filter(season == 'fall'))+
@@ -234,20 +256,40 @@ season_anom <- met_seasonal %>%
     col_3 = as.factor(if_else(max_anom_temp_c > 0, 2,1)),
     total_snow_cm = mean(snow_on_grnd_cm, na.rm = T),
     snow_anom_cm = snow_on_grnd_cm - total_snow_cm,
-    col_4 = as.factor(if_else(snow_anom_cm > 0, 2,1))
+    col_4 = as.factor(if_else(snow_anom_cm > 0, 2, 1)),
+    total_rain_sum_cm = mean(rain_sum_cm, na.rm = T),
+    rain_anom_cm = rain_sum_cm - total_rain_sum_cm,
+    col_5 = as.factor(if_else(rain_anom_cm > 0, 2, 1)),
+    total_wind_km_h = mean(wind_km_h, na.rm = T),
+    wind_anom_km_h = wind_km_h - total_wind_km_h,
+    col_6 = as.factor(if_else(wind_anom_km_h > 0, 2, 1))
   ) %>% 
-  mutate_if(
-    is.numeric, round(digits = 2)
+  mutate(
+    rain_anom_cm = round(rain_anom_cm, digits = 2),
+    mean_anom_temp_c = round(mean_anom_temp_c, digits = 2),
+    wind_anom_km_h = round(wind_anom_km_h, digits = 2),
+    
   )
+# %>% 
+#   ungroup() %>% 
+#   mutate(
+#     across(
+#       .cols = is.numeric, .fns = round
+#     )
+#   )
+  
 
 #Seasonal anomaly viz
 
-ggplot(data = season_anom %>% filter(season == 'winter'))+
+ggplot(data = season_anom %>% filter(season == 'summer'))+
   geom_bar(
-    aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
+    # aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
     # aes(x = w_year, y = min_anom_temp_c, fill = col_2),
     # aes(x = w_year, y = max_anom_temp_c, fill = col_3),
     # aes(x = w_year, y = snow_anom_cm, fill = col_4),
+    # aes(x = w_year, y = rain_anom_cm, fill = col_5),
+    aes(x = w_year, y = wind_anom_km_h, fill = col_6),
+    
     stat = 'identity',
     show.legend = F,
     alpha = 0.5
@@ -255,9 +297,9 @@ ggplot(data = season_anom %>% filter(season == 'winter'))+
   geom_text(
     aes(
       x = w_year, 
-      y = mean_anom_temp_c, 
-      label = mean_anom_temp_c,
-      vjust = 0.5 - sign(mean_anom_temp_c)/2
+      y = wind_anom_km_h, 
+      label = wind_anom_km_h,
+      vjust = 0.5 - sign(wind_anom_km_h)/2
     ),
     #position = position_dodge(width = 0.9) 
   )+
@@ -271,17 +313,19 @@ ggplot(data = season_anom %>% filter(season == 'winter'))+
                             'beatrice' = 'Beatrice'
                           ))
   )+
+  # scale_fill_manual(values=c('red','blue'))+
+  
   scale_fill_manual(values=c('blue','red'))+
   theme_classic()+
   xlab('')+
   #Change to match variable above
-  ylab('Mean Temp. Anomaly (cm)')+
+  ylab('Wind Anomaly (km/h)')+
   theme(
     text = element_text(size = 15)
   )
 
 ggsave(
-  here('output/data_viz/snow_anom_spring.png'),
+  here('output/data_viz/climate_viz/wind_anom_summer.png'),
   dpi = 300,
   width = 9,
   height = 7,
@@ -290,3 +334,28 @@ ggsave(
 
 
 
+# 6. Wilcoxon Rank Sum Test -----------------------------------------------
+
+# Running this test for temp, snow, rain, 
+
+met_24_25 <- met_data_clean %>% 
+  mutate(
+    w_year = as.factor(w_year)
+  ) %>% 
+  filter(
+    w_year == 2024 | w_year == 2025
+  )
+
+wlcx_met_rslt <- met_24_25 %>% 
+  group_by(station) %>% 
+  summarise(
+    #Snow on ground
+    snow_p = wilcox.test(snow_on_grnd_cm~w_year, exact = F)$p.value,
+    snow_w = wilcox.test(snow_on_grnd_cm~w_year, exact = F)$statistic,
+    snow_n = n(),
+    
+    #Wind max gust
+    wind_p = wilcox.test(spd_of_max_gust_km_h~w_year, exact = F)$p.value,
+    wind_w = wilcox.test(spd_of_max_gust_km_h~w_year, exact = F)$statistic,
+    wind_n = n()
+  )
