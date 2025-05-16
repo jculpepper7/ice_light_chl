@@ -91,43 +91,60 @@ ggsave(
 )
 
 
-# 5. MWU stat test  -------------------------------------------------------
+# 5. Prep data for stats --------------------------------------------------
+
+
 
 chm_mwu_df <- chem_df %>%
   group_by(lake, date, analyte_name) %>% 
   summarize(result=mean(result)) %>% 
-  # distinct(date) %>% 
   arrange(lake, date) %>% 
-  # count(analyte_name, date, result, year) %>%
-  # mutate(n = +(n > 0)) %>%
   pivot_wider(
     names_from = analyte_name, 
     values_from = result
   ) %>% 
   mutate(
     year = as.factor(year(date))
+  ) %>% 
+  clean_names() %>% 
+  mutate(
+    unfiltered_phosphorus_total_ugL = coalesce(unfiltered_phosphorus_total, unfiltered_phosphorus_total_2)
+  ) %>% 
+  select(
+    -c(
+      unfiltered_phosphorus_total, 
+      unfiltered_phosphorus_total_2
+    )
   )
+
+
+# **Write cleaned data to CSV ---------------------------------------------
+
+#write_csv(chm_mwu_df, here('data/chemistry/chem_clean.csv'))
+
+# 6. MWU stat test  -------------------------------------------------------
+
 
 chm_mwu_rslt <- chm_mwu_df %>% 
   group_by(lake) %>% 
   filter(lake != 'Lake Simcoe') %>% 
   summarise(
     #DIC
-    dic_p = wilcox.test(`Carbon; dissolved inorganic` ~year, exact = F)$p.value,
-    dic_w = wilcox.test(`Carbon; dissolved inorganic` ~year, exact = F)$statistic,
+    dic_p = wilcox.test(carbon_dissolved_inorganic ~ year, exact = F)$p.value,
+    dic_w = wilcox.test(carbon_dissolved_inorganic ~ year, exact = F)$statistic,
     dic_n = n(),
     #DOC
-    doc_p = wilcox.test(`Carbon; dissolved organic` ~year, exact = F)$p.value,
-    doc_w = wilcox.test(`Carbon; dissolved organic` ~year, exact = F)$statistic,
+    doc_p = wilcox.test(carbon_dissolved_organic ~year, exact = F)$p.value,
+    doc_w = wilcox.test(carbon_dissolved_organic ~year, exact = F)$statistic,
     doc_n = n(),
     #Total Nitrogen
-    tn_p = wilcox.test(`Nitrogen; total`~year, exact = F)$p.value,
-    tn_w = wilcox.test(`Nitrogen; total`~year, exact = F)$statistic,
+    tn_p = wilcox.test(nitrogen_total~year, exact = F)$p.value,
+    tn_w = wilcox.test(nitrogen_total~year, exact = F)$statistic,
     tn_n = n(),
     #Total Phosphorus
-    tp_p = wilcox.test(`Phosphorus; total`~year, exact = F)$p.value,
-    tp_W = wilcox.test(`Phosphorus; total`~year, exact = F)$statistic,
+    tp_p = wilcox.test(phosphorus_total~year, exact = F)$p.value,
+    tp_W = wilcox.test(phosphorus_total~year, exact = F)$statistic,
     tp_n = n()
   )
-
+  
   
