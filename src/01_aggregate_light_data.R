@@ -256,6 +256,9 @@ par_sum_wide <- par_ice %>%
     wht_ratio = wht_slush_cm/ice_sheet_cm
   )
 
+
+# **Write clean data to CSV -----------------------------------------------
+
 #write_csv(par_sum_wide, here('data/combined_data/par_ice.csv'))
 
 par_ice_wide_df <- par_sum_wide %>% 

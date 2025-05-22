@@ -82,18 +82,16 @@ ggplot(data = chem_df %>% filter(analyte_name == 'Carbon; dissolved organic'))+
   ) #+
   #facet_wrap(~year)
   
-ggsave(
-  here('output/data_viz/chem_tn.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 5,
-  units = 'in'
-)
+# ggsave(
+#   here('output/data_viz/chem_tn.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 5,
+#   units = 'in'
+# )
 
 
 # 5. Prep data for stats --------------------------------------------------
-
-
 
 chm_mwu_df <- chem_df %>%
   group_by(lake, date, analyte_name) %>% 
@@ -120,7 +118,7 @@ chm_mwu_df <- chem_df %>%
 
 # **Write cleaned data to CSV ---------------------------------------------
 
-#write_csv(chm_mwu_df, here('data/chemistry/chem_clean.csv'))
+write_csv(chm_mwu_df, here('data/combined_data/chem_clean.csv'))
 
 # 6. MWU stat test  -------------------------------------------------------
 

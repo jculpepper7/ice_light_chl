@@ -110,7 +110,10 @@ met_data_clean <- beatrice %>%
        snow_on_grnd_flag, dir_of_max_gust_flag, spd_of_max_gust_flag)
   )
 
- 
+
+# **Write cleaned data to CSV ---------------------------------------------
+
+ write_csv(met_data_clean, here('data/combined_data/met_clean.csv'))
 
 # 3. Visualize daily data -------------------------------------------------
 

@@ -249,6 +249,11 @@ chl_par <- chla_df %>%
   arrange(site, date)
 
 
+# **Write clean data to CSV -----------------------------------------------
+
+
+write_csv(chl_par, here('data/combined_data/chla_par_clean.csv'))
+
 # 7. Chl-a -- Snow plots --------------------------------------------------
 
 
@@ -302,13 +307,13 @@ plt_func(
   y_name = 'Chl-a Concentration (ug/L)'
 )
 
-ggsave(
-  here('output/data_viz/chla_viz/chla_by_snow.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chla_by_snow.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 
 # **7c. Chla ~ Ice sheet thickness ----------------------------------------
@@ -386,13 +391,13 @@ plt_func(
 #We can test this by getting the chl-a peak depth
 #from the RBR data.
 
-ggsave(
-  here('output/data_viz/chla_viz/chla_by_par.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chla_by_par.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 # **7i. Chla ~ PAR transmitted w/o snow -----------------------------------
 
@@ -418,13 +423,13 @@ plt_func(
 )+
   scale_x_continuous(labels = percent_format())
 
-ggsave(
-  here('output/data_viz/chla_viz/chlz_by_par_trans.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_par_trans.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 
 # **7k. Chla depth ~ snow -------------------------------------------------
@@ -437,13 +442,13 @@ plt_func(
   y_name = 'Chl-a Depth (m)'
 )
 
-ggsave(
-  here('output/data_viz/chla_viz/chlz_by_snow.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_snow.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )
 
 # **7l. Chla depth ~ black% -------------------------------------------------
 
@@ -456,13 +461,13 @@ plt_func(
 )+
   scale_x_continuous(labels = percent_format())
 
-ggsave(
-  here('output/data_viz/chla_viz/chlz_by_blk_ratio.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_blk_ratio.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 # **7m. Chla depth ~ white% -------------------------------------------------
 
@@ -475,13 +480,13 @@ plt_func(
 )+
   scale_x_continuous(labels = percent_format())
 
-ggsave(
-  here('output/data_viz/chla_viz/chlz_by_wht_ratio.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_wht_ratio.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 # **7n. Chla depth ~ white% -------------------------------------------------
 
@@ -493,13 +498,13 @@ plt_func(
   y_name = 'Chl-a Depth (m)'
 )
 
-ggsave(
-  here('output/data_viz/chla_viz/chlz_by_ice_thickness.png'),
-  dpi = 300,
-  width = 6.5,
-  height = 6.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_ice_thickness.png'),
+#   dpi = 300,
+#   width = 6.5,
+#   height = 6.5,
+#   units = 'in'
+# )  
 
 
 # 8. MWU test on chla depth -----------------------------------------------
