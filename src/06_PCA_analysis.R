@@ -17,6 +17,7 @@ ice_par_chl <- read_csv(here('data/combined_data/chla_par_clean.csv'))
 
 chem <- read_csv(here('data/combined_data/chem_clean.csv'))
 
+rbr <- read_csv(here('data/combined_data/rbr_processed.csv'))
 
 # 3. Modify data to join --------------------------------------------------
 
@@ -39,7 +40,7 @@ ipc_clean <- ice_par_chl %>%
   )
 
 
-# #**3b. Clean chem data --------------------------------------------------
+# **3b. Clean chem data --------------------------------------------------
 
 chem_clean <- chem %>% 
   select(
@@ -62,20 +63,105 @@ chem_clean <- chem %>%
     -lake
   )
 
-# 3. Combine dataframes ---------------------------------------------------
 
+# **3c. Clean RBR data  ---------------------------------------------------
 
-pca_prep <- ipc_clean %>% 
-  full_join(chem_clean) %>%
-  arrange(site, date) %>% 
-  #There are so many missing values in the chem data
-  #that I need to eliminate them for the PCA
-  #because the PCA can't handle NAs
-  #I'll figure out how to fix them later.
-  select(
-    #Need to remove bio variables
-    1:2,4:28
+rbr_clean <- rbr %>% 
+  mutate(
+    site = as.factor(site),
+    year = as.factor(year),
+    position = as.factor(position)
   ) %>% 
+  group_by(site, date) %>% 
+  pivot_wider(
+    names_from = c(position),
+    values_from = c(
+      mean_temp,
+      mean_do,
+      mean_do_sat,
+      mean_par_up,
+      mean_chl_a
+    )
+  )
+
+
+# 4. Filter clean data for PCA --------------------------------------------
+
+
+# **4a. IPC PCA -----------------------------------------------------------
+
+ipc_pca <- ipc_clean %>% 
+  select(
+    date,
+    site,
+    year,
+    ice_sheet_cm, 
+    snow_avg_cm,
+    par_trans,
+    par_trans_no_snow,
+    blk_ratio,
+    wht_ratio
+  )
+
+
+# **4b. Chem PCA ----------------------------------------------------------
+
+chem_pca <- chem_clean %>% 
+  select(
+    site,
+    date,
+    year,
+    carbon_dissolved_inorganic,
+    carbon_dissolved_organic,
+    nitrogen_total,
+    phosphorus_total
+  )
+
+
+# **4c. RBR PCA -----------------------------------------------------------
+
+rbr_pca <- rbr_clean %>% 
+  select(
+    site,
+    date,
+    year,
+    mean_temp_full,
+    mean_do_full,
+    mean_do_sat_full,
+    mean_par_up_full
+  )
+
+# 5. Combine dataframes ---------------------------------------------------
+
+#BELOW IS INITIAL PCA THAT WORKEd, SO I'M SAVING IT FOR NOW.----
+# pca_prep <- ipc_clean %>% 
+#   full_join(chem_clean) %>% 
+#   full_join(rbr_clean) %>% 
+#   arrange(site, date) %>% 
+#   #There are so many missing values in the chem data
+#   #that I need to eliminate them for the PCA
+#   #because the PCA can't handle NAs
+#   #I'll figure out how to fix them later.
+#   select(
+#     #Need to remove bio variables
+#     1:2,4:28
+#   ) %>% 
+#   na.omit() %>% 
+#   #Need to remove non-numeric columns
+#   #Combining site name and date, then moving them to row names
+#   unite(
+#     site_date, c(site, date), sep = '_', remove = F
+#   ) %>% 
+#   distinct(
+#     site_date, .keep_all = T
+#   ) 
+
+#**PCA Prep new----
+pca_prep <- ipc_pca %>% 
+  #full_join(chem_pca) %>% #LAEAVING OUT FOR NOW. 
+                           #TOO MANY MISSING DATA POINTS FOR SIMCOE
+  full_join(rbr_pca) %>% 
+  arrange(site, date) %>% 
   na.omit() %>% 
   #Need to remove non-numeric columns
   #Combining site name and date, then moving them to row names
@@ -88,7 +174,7 @@ pca_prep <- ipc_clean %>%
 
 pca_df <- pca_prep %>% 
   select(
-    -c(site, date)
+    -c(site, date, year)
   ) %>% 
   column_to_rownames(var = 'site_date')
 
@@ -163,7 +249,7 @@ ggplot(par_scores, aes(x = PC1, y = PC2)) +
   ggtitle("Principal Component Analysis, scaling 2")
 
 ggsave(
-  here('output/data_viz/pca.png'),
+  here('output/data_viz/pca_update_2025.05.27.png'),
   dpi = 300,
   width = 8,
   height = 8,
