@@ -90,7 +90,7 @@ rbr_clean <- rbr %>%
 
 # **4a. IPC PCA -----------------------------------------------------------
 
-ipc_pca <- ipc_clean %>% 
+ipc_pca_df <- ipc_clean %>% 
   select(
     date,
     site,
@@ -100,7 +100,9 @@ ipc_pca <- ipc_clean %>%
     par_trans,
     par_trans_no_snow,
     blk_ratio,
-    wht_ratio
+    wht_ratio,
+    chla_conc_ugL,
+    max_chl_depth
   )
 
 
@@ -120,20 +122,46 @@ chem_pca <- chem_clean %>%
 
 # **4c. RBR PCA -----------------------------------------------------------
 
-rbr_pca <- rbr_clean %>% 
+#Isolate the average full water column values
+rbr_pca_full <- rbr_clean %>% 
   select(
     site,
     date,
     year,
     mean_temp_full,
     mean_do_full,
-    mean_do_sat_full,
+    #mean_do_sat_full,
     mean_par_up_full
+  )
+
+#Isolate surface measurments
+rbr_pca_top <- rbr_clean %>% 
+  select(
+    site,
+    date,
+    year,
+    mean_temp_top,
+    mean_do_top,
+    #mean_do_sat_top,
+    mean_par_up_top
+  )
+
+
+#Isolate the bottom water values
+rbr_pca_bottom <- rbr_clean %>% 
+  select(
+    site,
+    date,
+    year,
+    mean_temp_bottom,
+    mean_do_bottom,
+    #mean_do_sat_bottom,
+    mean_par_up_bottom
   )
 
 # 5. Combine dataframes ---------------------------------------------------
 
-#BELOW IS INITIAL PCA THAT WORKEd, SO I'M SAVING IT FOR NOW.----
+#BELOW IS INITIAL PCA THAT WORKED, SO I'M SAVING IT FOR NOW.----
 # pca_prep <- ipc_clean %>% 
 #   full_join(chem_clean) %>% 
 #   full_join(rbr_clean) %>% 
@@ -157,10 +185,10 @@ rbr_pca <- rbr_clean %>%
 #   ) 
 
 #**PCA Prep new----
-pca_prep <- ipc_pca %>% 
+pca_prep <- ipc_pca_df %>% 
   #full_join(chem_pca) %>% #LAEAVING OUT FOR NOW. 
                            #TOO MANY MISSING DATA POINTS FOR SIMCOE
-  full_join(rbr_pca) %>% 
+  full_join(rbr_pca_bottom) %>% 
   arrange(site, date) %>% 
   na.omit() %>% 
   #Need to remove non-numeric columns
@@ -249,7 +277,7 @@ ggplot(par_scores, aes(x = PC1, y = PC2)) +
   ggtitle("Principal Component Analysis, scaling 2")
 
 ggsave(
-  here('output/data_viz/pca_update_2025.05.27.png'),
+  here('output/data_viz/pca_bottom_2025.06.02.png'),
   dpi = 300,
   width = 8,
   height = 8,
