@@ -387,7 +387,10 @@ ggplot(tidy_scores, aes(x = RDA1, y = RDA2)) +
             colour = "#117733") +
   theme_classic()+
   xlab(paste0("RDA1 (", perc[1], "%)"))+ 
-  ylab(paste0("RDA2 (", perc[2], "%)"))
+  ylab(paste0("RDA2 (", perc[2], "%)"))+
+  theme(
+    legend.title = element_blank()
+  )
 
 # ggsave(
 #   here('output/rda_viz/rda_2025.06.06.png'),
