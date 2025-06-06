@@ -39,6 +39,7 @@ ipc_clean <- ice_par_chl %>%
     chla_conc_ugL = total_conc_ug_l
   )
 
+# write_csv(ipc_clean, here('data/clean_data/ipc_clean.csv'))
 
 # **3b. Clean chem data --------------------------------------------------
 
@@ -63,6 +64,8 @@ chem_clean <- chem %>%
     -lake
   )
 
+# write_csv(chem_clean, here('data/clean_data/chem_clean.csv'))
+
 
 # **3c. Clean RBR data  ---------------------------------------------------
 
@@ -83,6 +86,8 @@ rbr_clean <- rbr %>%
       mean_chl_a
     )
   )
+
+# write_csv(rbr_clean, here('data/clean_data/rbr_clean.csv'))
 
 
 # 4. Filter clean data for PCA --------------------------------------------
@@ -131,33 +136,35 @@ rbr_pca_full <- rbr_clean %>%
     mean_temp_full,
     mean_do_full,
     #mean_do_sat_full,
-    mean_par_up_full
+    mean_par_up_full,
+    #ADD RBR chl-a?
+    #mean_chl_a_full
   )
 
-#Isolate surface measurments
-rbr_pca_top <- rbr_clean %>% 
-  select(
-    site,
-    date,
-    year,
-    mean_temp_top,
-    mean_do_top,
-    #mean_do_sat_top,
-    mean_par_up_top
-  )
-
-
-#Isolate the bottom water values
-rbr_pca_bottom <- rbr_clean %>% 
-  select(
-    site,
-    date,
-    year,
-    mean_temp_bottom,
-    mean_do_bottom,
-    #mean_do_sat_bottom,
-    mean_par_up_bottom
-  )
+# #Isolate surface measurments
+# rbr_pca_top <- rbr_clean %>% 
+#   select(
+#     site,
+#     date,
+#     year,
+#     mean_temp_top,
+#     mean_do_top,
+#     #mean_do_sat_top,
+#     mean_par_up_top
+#   )
+# 
+# 
+# #Isolate the bottom water values
+# rbr_pca_bottom <- rbr_clean %>% 
+#   select(
+#     site,
+#     date,
+#     year,
+#     mean_temp_bottom,
+#     mean_do_bottom,
+#     #mean_do_sat_bottom,
+#     mean_par_up_bottom
+#   )
 
 # 5. Combine dataframes ---------------------------------------------------
 
@@ -188,7 +195,7 @@ rbr_pca_bottom <- rbr_clean %>%
 pca_prep <- ipc_pca_df %>% 
   #full_join(chem_pca) %>% #LAEAVING OUT FOR NOW. 
                            #TOO MANY MISSING DATA POINTS FOR SIMCOE
-  full_join(rbr_pca_bottom) %>% 
+  full_join(rbr_pca_full) %>% 
   arrange(site, date) %>% 
   na.omit() %>% 
   #Need to remove non-numeric columns
