@@ -208,8 +208,12 @@ pca_prep <- ipc_pca_df %>%
   ) 
 
 pca_df <- pca_prep %>% 
+  #Note: Including year within the PCA
+  mutate(
+    year = as.numeric(year)
+  ) %>% 
   select(
-    -c(site, date, year)
+    -c(site, date) #, year
   ) %>% 
   column_to_rownames(var = 'site_date')
 
@@ -281,10 +285,12 @@ ggplot(par_scores, aes(x = PC1, y = PC2)) +
   theme_classic() +
   theme(
     axis.line = element_blank()) +
-  ggtitle("Principal Component Analysis, scaling 2")
+  ggtitle("Principal Component Analysis, scaling 2")+
+  xlab(paste0("PCA1 (49%)"))+ 
+  ylab(paste0("PCA2 (16%)"))
 
 ggsave(
-  here('output/data_viz/pca_bottom_2025.06.02.png'),
+  here('output/data_viz/pca_wyear_2025.06.12.png'),
   dpi = 300,
   width = 8,
   height = 8,

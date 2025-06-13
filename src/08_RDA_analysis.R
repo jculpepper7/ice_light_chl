@@ -371,7 +371,8 @@ ggplot(tidy_scores, aes(x = RDA1, y = RDA2)) +
                            colour = site,
                            shape = year),
              size = 5,
-             alpha = 0.7) +
+             alpha = 0.7
+  ) +
   scale_color_manual(
     values = c('#44AA99','#DDCC77','#CC6677')
   ) +
