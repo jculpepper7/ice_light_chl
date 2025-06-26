@@ -269,9 +269,9 @@ season_anom <- met_seasonal %>%
   ) %>% 
   mutate(
     rain_anom_cm = round(rain_anom_cm, digits = 2),
-    mean_anom_temp_c = round(mean_anom_temp_c, digits = 2),
+    mean_anom_temp_c = round(mean_anom_temp_c, digits = 0),
     wind_anom_km_h = round(wind_anom_km_h, digits = 2),
-    
+    snow_anom_cm = round(snow_anom_cm, digits = 0)
   )
 # %>% 
 #   ungroup() %>% 
@@ -284,14 +284,14 @@ season_anom <- met_seasonal %>%
 
 #Seasonal anomaly viz
 
-ggplot(data = season_anom %>% filter(season == 'summer'))+
+ggplot(data = season_anom %>% filter(season == 'winter'))+
   geom_bar(
-    # aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
+    aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
     # aes(x = w_year, y = min_anom_temp_c, fill = col_2),
     # aes(x = w_year, y = max_anom_temp_c, fill = col_3),
     # aes(x = w_year, y = snow_anom_cm, fill = col_4),
     # aes(x = w_year, y = rain_anom_cm, fill = col_5),
-    aes(x = w_year, y = wind_anom_km_h, fill = col_6),
+    #aes(x = w_year, y = wind_anom_km_h, fill = col_6),
     
     stat = 'identity',
     show.legend = F,
@@ -300,10 +300,11 @@ ggplot(data = season_anom %>% filter(season == 'summer'))+
   geom_text(
     aes(
       x = w_year, 
-      y = wind_anom_km_h, 
-      label = wind_anom_km_h,
-      vjust = 0.5 - sign(wind_anom_km_h)/2
+      y = mean_anom_temp_c, 
+      label = mean_anom_temp_c,
+      vjust = 0.5 - sign(mean_anom_temp_c)/2
     ),
+    size = 3.5
     #position = position_dodge(width = 0.9) 
   )+
   geom_hline(yintercept=0, size=0.5)+
@@ -312,8 +313,8 @@ ggplot(data = season_anom %>% filter(season == 'summer'))+
     ncol = 1,
     labeller = labeller(station = 
                           c(
-                            'barrie' = 'Barrie',
-                            'beatrice' = 'Beatrice'
+                            'barrie' = 'Kempenfelt Bay',
+                            'beatrice' = 'Paint Lake'
                           ))
   )+
   # scale_fill_manual(values=c('red','blue'))+
@@ -322,13 +323,13 @@ ggplot(data = season_anom %>% filter(season == 'summer'))+
   theme_classic()+
   xlab('')+
   #Change to match variable above
-  ylab('Wind Anomaly (km/h)')+
+  ylab('Mean Temp. Anomaly (\u00B0C)')+
   theme(
-    text = element_text(size = 15)
+    text = element_text(size = 35)
   )
 
 ggsave(
-  here('output/data_viz/climate_viz/wind_anom_summer.png'),
+  here('output/data_viz/climate_viz/snow_anom_winter_2025.06.22.png'),
   dpi = 300,
   width = 9,
   height = 7,

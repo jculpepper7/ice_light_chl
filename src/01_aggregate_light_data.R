@@ -9,6 +9,10 @@ library(here)
 library(janitor)
 library(ggtext)
 library(scales)
+#install.packages("wacolors")
+#devtools::install_github("CoryMcCartan/wacolors")
+library(wacolors)
+library(ggstatsplot)
 
 # 1. Import data ----------------------------------------------------
 
@@ -89,6 +93,41 @@ par <- par_24 %>%
 
 # 4. Data Viz - PAR -------------------------------------------------------
 
+# comp_plt_func <- function(df, x_axis, y_axis, gp, text) {
+#   grouped_ggbetweenstats(
+#     data             = df,
+#     x                = x_axis,
+#     y                = y_axis,
+#     bf.message       = F,
+#     results.subtitle = F,
+#     paitwise.display = 's',
+#     grouping.var     = gp,
+#     ggsignif.args    = list(textsize = 10, tip_length = 0.01),
+#     p.adjust.method  = "bonferroni",
+#     palette          = "Stark",
+#     package          = "tvthemes",
+#     plotgrid.args    = list(nrow = 1),
+#     xlab             = '',
+#     ylab             = as.character(text),
+#     ggplot.component = list(
+#       theme_classic(),
+#       theme(
+#         text = element_text(size = 50),
+#         strip.text = element_text(size = 25)
+#       )
+#     )
+#   )
+# }
+# 
+# #test
+# 
+# test <- comp_plt_func(
+#   df = rbr, 
+#   x_axis = year, 
+#   y_axis = chl_a,
+#   gp = site_proper,
+#   text = 'chl-a'
+# )
 
 #**Boxplot: Surface air----
 ggplot(data = par %>% filter(depth == 'air'))+
@@ -116,20 +155,30 @@ ggplot(data = par %>% filter(depth == 'air'))+
 
 #**Boxplot: Ice-Water interface----
 ggplot(data = par %>% filter(depth == 'iw_int',par<1000))+
-  geom_boxplot(aes(x = year, y = par, fill = site))+ #outlier.shape = NA
-  #geom_jitter(aes(x = year, y = par, fill = site))+
+  geom_boxplot(aes(x = site, y = par, fill = year), outlier.shape = NA)+ #outlier.shape = NA
+  #geom_violin(aes(x = year, y = par, fill = site))+ #outlier.shape = NA
+  geom_jitter(
+    aes(x = site, y = par),
+    size = 3,
+    alpha = 0.6
+  )+
   theme_classic()+
   theme(
     legend.title = element_blank(),
     text = element_text(size = 25)
   )+
+  scale_fill_wa_d(wacolors$rainier)+
+  # scale_fill_manual(
+  #   values = c('','','')
+  # )
   labs(
     x = '',
     y = 'PAR (\u03bcE m<sup>-2</sup> s<sup>-1</sup> )',
     title = 'Ice-Water Interface PAR') +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
-  )
+  )+
+  ylim(0,300)
 
 # ggsave(
 #   here('output/data_viz/iw_int_par_box.png'),
@@ -143,26 +192,45 @@ ggplot(data = par %>% filter(depth == 'iw_int',par<1000))+
 
 #**Boxplot: White Ice----
 ggplot(data = ice_qual_clean)+
-  geom_boxplot(aes(x = year, y = total_ice_cm, fill = site))+
+  geom_boxplot(
+    aes(x = year, y = total_ice_cm, fill = site),
+    outlier.shape = NA
+  )+
+  geom_point(
+    aes(x = year, y = total_ice_cm, shape = site),
+    alpha = 0.5,
+    size = 3,
+    position = position_jitterdodge(jitter.width = 0.2)
+  )+
   theme_classic()+
   theme(
     legend.title = element_blank(),
+    legend.position = 'inside',
+    legend.position.inside = c(0.2, 0.8),
     text = element_text(size = 25)
   )+
   labs(
     x = '',
     y = 'Total Ice (cm)') +
+  scale_fill_wa_d(
+    palette = 'rainier',
+    which = c('lake', 'lodge', 'ground'),
+    labels = c('Paint - Deep', 'Paint - Shallow', 'Kempenfelt Bay')
+  )+
+  scale_shape_discrete(
+    labels = c('Paint - Deep', 'Paint - Shallow', 'Kempenfelt Bay')
+  )+
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
   )
 
-# ggsave(
-#   here('output/data_viz/tot_ice_box.png'),
-#   dpi = 300,
-#   width = 7,
-#   height = 5,
-#   units = 'in'
-# )
+ggsave(
+  here('output/data_viz/ice_viz/tot_ice_box_2025.06.22.png'),
+  dpi = 300,
+  width = 7,
+  height = 5,
+  units = 'in'
+)
 
 #**Boxplot: Black Ice----
 ggplot(data = ice_qual_clean)+
@@ -301,22 +369,38 @@ ggplot(data = par_ice_wide_df)+
 
 #**Boxplot: white ice %----
 ggplot(data = par_ice_wide_df )+
-  geom_boxplot(aes(x = year, y = perc_wht_tot, fill = site))+
+  geom_boxplot(aes(x = year, y = perc_wht_tot, fill = site),
+               outlier.shape = NA)+
+  geom_point(
+    aes(x = year, y = perc_wht_tot, shape = site), 
+    size = 3, 
+    alpha = 0.5,
+    position = position_jitterdodge(jitter.width = 0.2)
+  )+
   theme_classic()+
   theme(
-    legend.title = element_blank(),
+    #legend.title = element_blank(),
+    legend.position = 'none',
     text = element_text(size = 25)
+  )+
+  scale_fill_wa_d(
+    palette = 'rainier',
+    which = c('lake', 'lodge', 'ground')
+  )+
+  scale_color_wa_d(
+    palette = 'rainier',
+    which = c('lake', 'lodge', 'ground')
   )+
   labs(
     x = '',
     y = 'White Ice (%)') +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
-        legend.position = 'bottom'
-  )
+  )+
+  scale_y_continuous(labels = scales::percent_format(scale = 100))
 
 # ggsave(
-#   here('output/data_viz/perc_wht_box_2025.png'),
+#   here('output/data_viz/ice_viz/perc_wht_box_2025.06.22.png'),
 #   dpi = 300,
 #   width = 7,
 #   height = 5,
@@ -325,21 +409,34 @@ ggplot(data = par_ice_wide_df )+
 
 #**Boxplot: PAR Transmitted %----
 ggplot(data = par_ice_wide_df)+
-  geom_boxplot(aes(x = year, y = perc_trans_air, fill = site))+
+  geom_boxplot(aes(x = year, y = perc_trans_air, fill = site),
+               outlier.shape = NA)+
+  geom_point(
+    aes(x = year, y = perc_trans_air, shape = site), 
+    size = 3, 
+    alpha = 0.5,
+    position = position_jitterdodge(jitter.width = 0.2)
+  )+
   theme_classic()+
   theme(
-    legend.title = element_blank(),
+    #legend.title = element_blank(),
+    legend.position = 'none',
     text = element_text(size = 25)
+  )+
+  scale_fill_wa_d(
+    palette = 'rainier',
+    which = c('lake','lodge', 'ground')
   )+
   labs(
     x = '',
     y = 'PAR Transmitted (%)') +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
-  )
+  )+
+  scale_y_continuous(labels = scales::percent_format(scale = 100))
 
 # ggsave(
-#   here('output/data_viz/perc_par_trans_box.png'),
+#   here('output/data_viz/par_viz/perc_par_trans_box_2025.06.22.png'),
 #   dpi = 300,
 #   width = 7,
 #   height = 5,
@@ -445,19 +542,25 @@ plt_func <- function(
         color = site,
         shape = year
       ),
-      size = 3,
-      alpha = 0.7
+      size = 4,
+      alpha = 0.8
     )+
     theme_classic()+
-    scale_color_viridis_d(
-      labels = c('Paint Deep', 'Paint Shallow', 'Kempenfelt Bay')
+    # scale_color_viridis_d(
+    #   labels = c('Paint Deep', 'Paint Shallow', 'Kempenfelt Bay')
+    # )+
+    scale_color_wa_d(
+      palette = 'rainier',
+      which = c('lake', 'lodge', 'ground'),
+      labels = c('Paint - Deep', 'Paint - Shallow', 'Kempenfelt Bay')
     )+
     theme(
-      legend.position = 'bottom',
+      legend.position = 'inside',
+      legend.position.inside = c(0.8, 0.8),
       legend.box = 'vertical',
       legend.margin = margin(),
       legend.title = element_blank(),
-      text = element_text(size = 15)
+      text = element_text(size = 35)
     )+
     #labs(x = 'Ice Thickness (cm)', y = expression('PAR w/o Snow (\u03bcmol ' ~m^-2 ~s^-1* ')'))+
     labs(x = x_name, y = y_name)+
@@ -495,21 +598,40 @@ plt_func <- function(
 #   )+
 #   scale_x_continuous(breaks = seq(0,30,5), limits = c(0,30))
 
+library(ggpmisc)
+library(ggpubr)
+
 plt_func(
   plt_df = par_sum_wide, 
   var_ind = snow_avg_cm, 
   var_dep = par_trans, 
   x_name = 'Snow Thickness (cm)', 
   y_name = 'PAR (%)'
-)
+)+
+  # scale_y_log10()+
+  # scale_x_log10()+
+  theme(
+    legend.position = 'bottom'
+  )+
+  geom_smooth(
+    aes(x = snow_avg_cm, y = par_trans),
+    method = 'lm',
+    color = 'black',
+    se = T
+  )+
+  facet_wrap(~site)+
+  scale_x_continuous(trans = 'log1p', breaks = c(0, 3, 30))+
+  scale_y_continuous(trans = 'log1p', labels = scales::percent)
 
+test <- lm(data = par_sum_wide , log(par_trans)~log(snow_avg_cm))
+summary(test)
 ggsave(
-  here('output/data_viz/par_viz/par_knee_snow.png'),
+  here('output/data_viz/par_viz/log_par_pplt_2025.06.25.png'),
   dpi = 300,
-  width = 6.5,
+  width = 8.5,
   height = 6.5,
   units = 'in'
-)  
+)
 
 
 
@@ -557,21 +679,51 @@ ggsave(
 
 # **7e. PAR ~ White ice fraction ------------------------------------------
 
-par_wht <- plt_func(
-  plt_df = par_sum_wide, 
-  var_ind = wht_ratio, 
-  var_dep = par_trans_no_snow, 
-  x_name = 'White Ice Ratio (%)', 
-  y_name = 'PAR (%)'
-)
 
-par_wht + scale_x_continuous(labels = percent_format())
+
+plt_func(
+  plt_df = par_sum_wide, 
+  var_ind = snow_avg_cm, 
+  var_dep = par_trans, 
+  x_name = 'Snow (cm)', 
+  y_name = 'PAR (%)'
+)+
+  # scale_y_log10()+
+  # scale_x_log10()+
+  theme(
+    legend.position = 'bottom'
+  )+
+  geom_smooth(
+    aes(x = snow_avg_cm, y = par_trans),
+    method = 'lm',
+    color = 'black',
+    se = T
+  )+
+  facet_wrap(
+    ~site,
+    labeller = labeller(site = 
+                          c(
+                            'simcoe.deep' = 'Kempenfelt Bay',
+                            'paint.shallow' = 'Paint Lake - Shallow',
+                            'paint.deep' = 'Paint Lake - Deep'
+                          ))
+  )+
+  scale_x_continuous(
+    trans = 'log1p', 
+    breaks = c(0,3,30), 
+    #labels = scales::percent
+  )+
+  scale_y_continuous(trans = 'log1p', labels = scales::percent)+
+  theme(panel.spacing = unit(2, 'lines'))
+
+
+#par_wht + scale_x_continuous(labels = percent_format())
 
 ggsave(
-  here('output/data_viz/par_viz/par_wht_ratio.png'),
+  here('output/data_viz/par_viz/par_trans_snow_log_all.png'),
   dpi = 300,
-  width = 5.5,
-  height = 5.5,
+  width = 15.5,
+  height = 8.5,
   units = 'in'
 )  
 
@@ -644,3 +796,33 @@ z <- qplot(snow_avg_cm, par_trans, data = augment(fit3)) + geom_line(aes(y = .fi
 
 ggplotly(z)
 
+
+# 9. Fancier boxplot ------------------------------------------------------
+
+
+# 9a. Fancy PAR -----------------------------------------------------------
+
+par_fancy <- grouped_ggbetweenstats(
+  data             = par_ice_wide_df,
+  x                = year,
+  y                = perc_trans_air,
+  bf.message       = F,
+  results.subtitle = T,
+  paitwise.display = 's',
+  grouping.var     = site,
+  ggsignif.args    = list(textsize = 10, tip_length = 0.01),
+  p.adjust.method  = "bonferroni",
+  palette          = "Stark",
+  package          = "tvthemes",
+  plotgrid.args    = list(nrow = 1),
+  xlab             = '',
+  ylab             = 'PAR Transmission (%)',
+  ggplot.component = list(
+    theme_classic(),
+    theme(
+      text = element_text(size = 5),
+      strip.text = element_text(size = 25)
+    )
+  )
+)
+par_fancy

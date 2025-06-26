@@ -10,7 +10,6 @@ library(here)
 library(ggridges)
 library(ggstatsplot)
 
-
 # 2. Import data ----------------------------------------------------------
 
 rbr <- read_csv(here('data/rbr/rbr_clean.csv')) %>% 
@@ -18,17 +17,26 @@ rbr <- read_csv(here('data/rbr/rbr_clean.csv')) %>%
     site = as.factor(site),
     position = as.factor(position),
     date2 = as.factor(date),
-    year = as.factor(year)
+    year = as.factor(year),
+    site_proper = as.factor(
+      if_else(
+        site == 'paint.deep', 'Paint - Deep', 
+        if_else(
+          site == 'paint.shallow', 'Paint - Shallow',
+          'Kempenfelt Bay'
+        )
+      )
+    )
   ) 
 
 # 3. Ridgeline plot -------------------------------------------------------
 
 ggplot(
   rbr %>% filter(position != 'mid'), 
-  aes(x = temp_c, y = year, fill = position), 
-  alpha = 0.5
+  aes(x = temp_c, y = year, fill = position)
 )+
-  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01)+
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, 
+  alpha = 0.5)+
   #scale_fill_viridis_d()+
   labs(title = 'Water Column Temperature (C)') +
   theme_classic() +
@@ -39,18 +47,37 @@ ggplot(
   )+
   facet_wrap(~site)
 
+# ggsave(
+#   here('output/data_viz/compare_plts/rbr_temp_ridge_2025.06.23.png'),
+#   dpi = 300,
+#   width = 8.5,
+#   height = 5,
+#   units = 'in'
+# )
 
-ggplot(rbr, aes(x = temp_c, y = date2, fill = year))+
+ggplot(rbr %>% filter(position != 'mid'), aes(x = chl_a, y = date2, fill = year))+
   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01)+
   #scale_fill_viridis_d()+
-  labs(title = 'Water Column Temperature (C)') +
+  labs(title = 'Chlorophyll-a (ug/L)') +
   theme_classic() +
   theme(
     #legend.position="none",
     panel.spacing = unit(0.1, "lines"),
     strip.text.x = element_text(size = 8)
   )+
-  facet_wrap(~site+position)
+  facet_wrap(
+    ~site+position, 
+    scales = 'free',
+    ncol = 2
+  )
+
+# ggsave(
+#   here('output/data_viz/compare_plts/rbr_chla_date_ridge_2025.06.23.png'),
+#   dpi = 300,
+#   width = 8,
+#   height = 8,
+#   units = 'in'
+# )
 
 
 set.seed(123)
@@ -250,63 +277,88 @@ chl_all <- grouped_ggbetweenstats(
   data             = rbr,
   x                = year,
   y                = chl_a,
-  grouping.var     = site,
-  ggsignif.args    = list(textsize = 4, tip_length = 0.01),
+  bf.message       = F,
+  results.subtitle = F,
+  paitwise.display = 's',
+  grouping.var     = site_proper,
+  ggsignif.args    = list(textsize = 20, tip_length = 0.1),
   p.adjust.method  = "bonferroni",
-  palette          = "default_jama",
-  package          = "ggsci",
+  #palette          = "SteppedSequential5Steps",
+  #package          = "colorBlindness",
   plotgrid.args    = list(nrow = 1),
   xlab             = '',
-  ylab             = 'Chlorophyll-a (mg/L)'
+  ylab             = 'Chlorophyll-a (mg/L)',
+  ggplot.component = list(
+    scale_color_wa_d(
+      palette = 'rainier',
+      which = c('lake','lodge')
+    ),
+    theme_classic(),
+    theme(
+      text = element_text(size = 35),
+      strip.text = element_text(size = 25),
+      legend.position = 'none'
+    )
+  )
 )
 chl_all
 
 ggsave(
-  here('output/data_viz/compare_plts/rbr_chla_by_year.png'),
+  here('output/data_viz/compare_plts/rbr_chla_by_year2.png'),
   dpi = 300,
   width = 20,
   height = 6,
   units = 'in'
 )
 
-# **4b. Top meter comparison ----------------------------------------------
 
 
-chl_top <- grouped_ggbetweenstats(
-  data             = rbr %>% filter(position == 'top'),
+# 10. Temp ----------------------------------------------------------------
+
+temp_all <- grouped_ggbetweenstats(
+  data             = rbr,
   x                = year,
-  y                = chl_a,
-  grouping.var     = site,
-  ggsignif.args    = list(textsize = 4, tip_length = 0.01),
+  y                = temp_c,
+  bf.message       = F,
+  results.subtitle = F,
+  paitwise.display = 's',
+  grouping.var     = site_proper,
+  ggsignif.args    = list(textsize = 20, tip_length = 0.1),
   p.adjust.method  = "bonferroni",
-  palette          = "default_jama",
-  package          = "ggsci",
+  #palette          = "SteppedSequential5Steps",
+  #package          = "colorBlindness",
   plotgrid.args    = list(nrow = 1),
   xlab             = '',
-  ylab             = 'Chlorophyll-a (mg/L)'
+  ylab             = 'Temp (\u00b0C)',
+  ggplot.component = list(
+    scale_color_wa_d(
+      palette = 'rainier',
+      which = c('lake','lodge')
+    ),
+    theme_classic(),
+    theme(
+      text = element_text(size = 35),
+      strip.text = element_text(size = 25),
+      legend.position = 'none'
+    )
+  )
 )
-chl_top
+temp_all
 
-
-# **4c. Bottom meter comparison -------------------------------------------
-
-chl_btm <- grouped_ggbetweenstats(
-  data             = rbr %>% filter(position == 'bottom'),
-  x                = year,
-  y                = chl_a,
-  grouping.var     = site,
-  ggsignif.args    = list(textsize = 4, tip_length = 0.01),
-  p.adjust.method  = "bonferroni",
-  palette          = "default_jama",
-  package          = "ggsci",
-  plotgrid.args    = list(nrow = 1),
-  xlab             = '',
-  ylab             = 'Chlorophyll-a (mg/L)'
+ggsave(
+  here::here('output/data_viz/compare_plts/rbr_temp_by_year2.png'),
+  dpi = 300,
+  width = 20,
+  height = 6,
+  units = 'in'
 )
-chl_btm
+# 9. depth profiles -------------------------------------------------------
 
-#KEEP GOING WITH THIS!
-#STILL NEED TO DO TEMP AND DO
-#####
-#THEN IT'D BE GOOD TO DO THIS WITH THE IN SITU VARS
-#I.E.: PAR, ICE QUALITY
+ggplot(data = rbr)+
+  geom_line(aes(x = temp_c, y = depth, color = date2))+
+  facet_wrap(
+    ~site+year, 
+    scales = 'free', 
+    ncol = 2
+  )+
+  scale_y_reverse()

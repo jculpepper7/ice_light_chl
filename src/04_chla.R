@@ -113,13 +113,13 @@ ggplot(data = chla_df) +
     text = element_text(size = 15)
   )
 
-ggsave(
-  here('output/data_viz/chla_crypto.png'),
-  dpi = 300,
-  units = 'in',
-  width = 6.5,
-  height = 5
-)
+# ggsave(
+#   here('output/data_viz/chla_crypto.png'),
+#   dpi = 300,
+#   units = 'in',
+#   width = 6.5,
+#   height = 5
+# )
 
 
 # **Time series -----------------------------------------------------------
@@ -214,7 +214,25 @@ chla_df <- read_csv(here('data/chla/chl_df.csv'))
 
 chla_z <- read_csv(here('data/rbr/max_chl_depth.csv'))
 
-chla_z_clean <- chla_z %>% 
+chl_z_pd <- chla_z %>% 
+  filter(
+    site == 'paint.deep'
+  ) %>% 
+  mutate(
+    max_chl_depth = if_else(
+      max_chl_depth > 5, 0.5, max_chl_depth
+    )
+  )
+
+chl_z_other <- chla_z %>% 
+  filter(
+    site != 'paint.deep'
+  )
+
+chla_z_fixed <- chl_z_pd %>% 
+  bind_rows(chl_z_other)
+
+chla_z_clean <- chla_z_fixed %>% 
   mutate(
     site = as.factor(site),
   ) %>% 
@@ -237,13 +255,23 @@ chla_z_clean <- chla_z %>%
   filter(
     site != 'simcoe.shallow',
     site != 'paint.south'
+  ) %>% 
+  group_by(site) %>% 
+  mutate(
+    max_z = if_else(
+      site == 'simcoe.deep', 42, 
+      if_else(
+        site == 'paint.deep', 17, 5
+      )
+    ),
+    perc_z = max_chl_depth/max_z
   )
 
 chl_par <- chla_df %>% 
   left_join(par_ice)%>% 
   mutate(
     year = as.factor(year),
-    site = as.factor(site)
+    site = as.factor(site),
   ) %>%  
   left_join(chla_z_clean) %>% 
   arrange(site, date)
@@ -505,6 +533,29 @@ plt_func(
 #   height = 6.5,
 #   units = 'in'
 # )  
+
+# **7o. Chla %depth ~ %PAR trans -------------------------------------------------
+
+plt_func(
+  plt_df = chl_par, 
+  var_ind = par_trans, 
+  var_dep = perc_z, 
+  x_name = 'PAR Transmitted (%)', 
+  y_name = 'Chl-a Peak Depth (%)'
+)+
+  scale_y_continuous(labels = percent_format())+
+  scale_x_continuous(labels = percent_format())+
+  theme(
+    legend.position = 'none'
+  )
+
+# ggsave(
+#   here('output/data_viz/chla_viz/chlz_by_ice_thickness_2025.06.22.png'),
+#   dpi = 300,
+#   width = 8.5,
+#   height = 6.5,
+#   units = 'in'
+# )
 
 
 # 8. MWU test on chla depth -----------------------------------------------
