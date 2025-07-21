@@ -50,7 +50,7 @@ rbr24_clean <- rbr_24 %>%
   #Remove the top meter of the water column.
   group_by(site, date) %>% 
   filter(
-    depth >= min(depth) + 1 & depth <= max(depth) - 1
+    depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
   ) %>% 
   ungroup() %>% 
   arrange(
@@ -84,7 +84,7 @@ rbr25_clean <- rbr_25 %>%
   #Remove the top meter of the water column.
   group_by(site, date) %>% 
   filter(
-    depth >= min(depth) + 1 & depth <= max(depth) - 1
+    depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
   ) %>% 
   ungroup() %>% 
   arrange(
@@ -113,7 +113,7 @@ rbr_clean <- rbr24_clean %>%
 
 #**Write cleaned data to CSV----
 
-#write_csv(rbr_clean, here('data/rbr/rbr_clean.csv'))
+#write_csv(rbr_clean, here('data/rbr/rbr_clean2.csv'))
 
 # 5. Summarize water column averages --------------------------------------
 
