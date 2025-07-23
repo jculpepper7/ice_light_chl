@@ -329,6 +329,12 @@ par_sum_wide <- par_ice %>%
 
 #write_csv(par_sum_wide, here('data/combined_data/par_ice.csv'))
 
+par_sum_wide <- read_csv(here('data/combined_data/par_ice.csv')) %>% 
+  mutate(
+    site = as.factor(site),
+    year = as.factor(year)
+  )
+
 par_ice_wide_df <- par_sum_wide %>% 
   group_by(site, date, year) %>% 
   summarise(
@@ -340,6 +346,9 @@ par_ice_wide_df <- par_sum_wide %>%
     perc_trans_air = iw_int/air,
     perc_trans_surf = iw_int/surface_air,
     perc_par_no_snow = snow_removed/surface_air
+  ) %>% 
+  mutate(
+    yday = yday(date) 
   )
 
 #**Boxplot: % ice and PAR----

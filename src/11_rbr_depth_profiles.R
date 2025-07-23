@@ -46,16 +46,41 @@ rbr1_int <- depth_intervals(rbr,
 rbr_df <- rbr1_int %>% 
   mutate(
     date2 = as.factor(date),
-    year = as.factor(year(date))
+    year = as.factor(year(date)),
+    yday = yday(date)
   ) %>% 
   filter(
     date2 != '2024-01-27'
   ) %>% 
-  group_by(site, date, year) %>% 
+  group_by(site, date, year) #%>% 
+  # mutate(
+  #   day_no = min_rank(date)
+  # )
+
+
+# Import ice quality data -------------------------------------------------
+
+par_sum_wide <- read_csv(here('data/combined_data/par_ice.csv')) %>% 
   mutate(
-    day_no = min_rank(date)
+    site = as.factor(site),
+    year = as.factor(year)
   )
 
+par_ice_wide_df <- par_sum_wide %>% 
+  group_by(site, date, year) %>% 
+  summarise(
+    perc_blk_tot = black_ice_cm/total_ice_cm,
+    perc_blk_sheet = black_ice_cm/ice_sheet_cm,
+    perc_wht_tot = white_ice_cm/total_ice_cm,
+    perc_wht_sheet = white_ice_cm/ice_sheet_cm,
+    perc_wht_slush = wht_slush_cm/ice_sheet_cm,
+    perc_trans_air = iw_int/air,
+    perc_trans_surf = iw_int/surface_air,
+    perc_par_no_snow = snow_removed/surface_air
+  ) %>% 
+  mutate(
+    yday = yday(date) 
+  )
 
 # Temp plts ---------------------------------------------------------------
 
@@ -304,13 +329,13 @@ ps_do_plt <- ggplot(
 
 ps_do_plt
 
-ggsave(
-  here::here('output/data_viz/rbr_viz/do_profile_ps.png'),
-  dpi = 300,
-  width = 5,
-  height = 8,
-  units = 'in'
-)
+# ggsave(
+#   here::here('output/data_viz/rbr_viz/do_profile_ps.png'),
+#   dpi = 300,
+#   width = 5,
+#   height = 8,
+#   units = 'in'
+# )
 
 # ps ----------------------------------------------------------------------
 
@@ -353,13 +378,13 @@ pd_do_plt <- ggplot(
 
 pd_do_plt
 
-ggsave(
-  here::here('output/data_viz/rbr_viz/do_profile_pd.png'),
-  dpi = 300,
-  width = 5,
-  height = 8,
-  units = 'in'
-)
+# ggsave(
+#   here::here('output/data_viz/rbr_viz/do_profile_pd.png'),
+#   dpi = 300,
+#   width = 5,
+#   height = 8,
+#   units = 'in'
+# )
 
 # Chla plts ---------------------------------------------------------------
 
@@ -406,13 +431,13 @@ kd_chla_plt <- ggplot(
 
 kd_chla_plt
 
-ggsave(
-  here::here('output/data_viz/rbr_viz/chla_profile_kb.png'),
-  dpi = 300,
-  width = 5,
-  height = 8,
-  units = 'in'
-)
+# ggsave(
+#   here::here('output/data_viz/rbr_viz/chla_profile_kb.png'),
+#   dpi = 300,
+#   width = 5,
+#   height = 8,
+#   units = 'in'
+# )
 
 
 # ps ----------------------------------------------------------------------
@@ -456,13 +481,13 @@ ps_chla_plt <- ggplot(
 
 ps_chla_plt
 
-ggsave(
-  here::here('output/data_viz/rbr_viz/chla_profile_ps.png'),
-  dpi = 300,
-  width = 5,
-  height = 8,
-  units = 'in'
-)
+# ggsave(
+#   here::here('output/data_viz/rbr_viz/chla_profile_ps.png'),
+#   dpi = 300,
+#   width = 5,
+#   height = 8,
+#   units = 'in'
+# )
 
 # ps ----------------------------------------------------------------------
 
@@ -505,38 +530,42 @@ pd_chla_plt <- ggplot(
 
 pd_chla_plt
 
-ggsave(
-  here::here('output/data_viz/rbr_viz/chla_profile_pd.png'),
-  dpi = 300,
-  width = 5,
-  height = 8,
-  units = 'in'
-)
+# ggsave(
+#   here::here('output/data_viz/rbr_viz/chla_profile_pd.png'),
+#   dpi = 300,
+#   width = 5,
+#   height = 8,
+#   units = 'in'
+# )
+
+
 #Heat map code----
 
 
 # **Point depth profile ---------------------------------------------------
 
 ggplot(
-  temp_interp_pls,
-  aes(x = date, y = depth, colour = temp)
-  #rbr_df %>% filter(site == 'paint.shallow'),
-  #rbr_df %>% filter(site == 'paint.deep'), 
-  #rbr_df %>% filter(site == 'simcoe.deep'), 
-  #aes(x = date, y = d_int, colour = temp_c)
+  # temp_interp_pls,
+  # rbr_df,
+  # aes(x = date, y = depth, colour = temp)
+  rbr_df %>% filter(site == 'paint.shallow'),
+  #rbr_df %>% filter(site == 'paint.deep'),
+  #rbr_df %>% filter(site == 'simcoe.deep'),
+  aes(x = date, y = d_int, colour = temp_c)
 ) +
   geom_point() +
   scale_y_reverse() +
-  scale_colour_gradient2(
-    midpoint = 3, 
-    high = scales::muted("red"), 
+  scale_color_gradient2(
+    midpoint = 3,
+    high = scales::muted("red"),
     low = scales::muted("blue")
   )+
-  # facet_wrap(
-  #   ~year,
-  #   ncol = 1,
-  #   scales = 'free'
-  # )+
+  geom_point(shape = 1, color = 'black')+
+  facet_wrap(
+    ~year,
+    ncol = 1,
+    scales = 'free'
+  )+
   theme_classic()
 
 
@@ -623,7 +652,7 @@ temp_interp_pls <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1, 3, length.out = 200))
+  tibble(depth = seq(1, 3.1, length.out = 200))
 ) %>%
   group_by(date) %>%
   mutate(
@@ -653,11 +682,12 @@ ggplot(
 ) +
   geom_point() +
   scale_y_reverse() +
-  scale_colour_gradient2(
-    midpoint = 3, 
-    high = scales::muted("red"), 
-    low = scales::muted("blue")
-  )+
+  # scale_colour_gradient2(
+  #   midpoint = 3,
+  #   high = scales::muted("red"), 
+  #   low = scales::muted("blue")
+  # )+
+  scale_color_wa_c(palette = 'lopez')+
   facet_wrap(
     ~year,
     ncol = 1,
@@ -732,16 +762,49 @@ pls_temp <- temp_raster_pls_24 %>%
 # **Temp heat map --------------------------------------------------------------
 
 
-ggplot(pls_temp, aes(yday, depth, fill = temp)) +
-  geom_tile() +
+ggplot() +
+  geom_tile(
+    pls_temp, 
+    mapping = aes(yday, depth, fill = temp)
+  ) +
   scale_y_reverse() +
   # scale_fill_gradient2(
   #   midpoint = 4,
   #   high = scales::muted("red"),
   #   low = scales::muted("blue")
   # ) +
-  scale_fill_viridis_c()+
+  # scale_fill_viridis_c()+
+  scale_fill_wa_c(
+    palette = 'lopez',
+    reverse = T
+  )+
   coord_cartesian(expand = FALSE)+
+  # geom_point(
+  #   rbr_df %>% filter(site == 'paint.shallow'),
+  #   #rbr_df %>% filter(site == 'paint.deep'),
+  #   #rbr_df %>% filter(site == 'simcoe.deep'),
+  #   mapping = aes(x = yday, y = d_int, colour = temp_c)
+  # )+
+  # scale_color_wa_c(
+  #   palette = 'lopez',
+  #   reverse = T
+  # )+
+  # geom_point(
+  #   rbr_df %>% filter(site == 'paint.shallow'),
+  #   #rbr_df %>% filter(site == 'paint.deep'),
+  #   #rbr_df %>% filter(site == 'simcoe.deep'),
+  #   mapping = aes(x = yday, y = d_int),
+  #   shape = 1,
+  #   color = 'black'
+  # )+
+  geom_vline(
+    rbr_df %>% filter(site == 'paint.shallow'),
+    mapping = aes(xintercept = yday),
+    linewidth = 2,
+    linetype = 'dotted',
+    color = 'black',
+    alpha = 0.2
+  )+
   facet_wrap(
     ~year, 
     #scales = 'free', 
@@ -877,7 +940,7 @@ DO_raster_pls_25 <- crossing(
   group_by(depth) %>%
   mutate(do_umol = estimate_DO_by_depth(pls_int_25, depth[1], date))
 
-#Join temp data
+#Join DO data
 pls_DO <- DO_raster_pls_24 %>% 
   bind_rows(DO_raster_pls_25) %>% 
   mutate(
@@ -1034,7 +1097,7 @@ chl_a_raster_pls_25 <- crossing(
   group_by(depth) %>%
   mutate(chl_a = estimate_chl_a_by_depth(pls_int_25, depth[1], date))
 
-#Join temp data
+#Join chl-a data
 pls_chl_a <- chl_a_raster_pls_24 %>% 
   bind_rows(chl_a_raster_pls_25) %>% 
   mutate(
