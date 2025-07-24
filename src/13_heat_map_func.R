@@ -10,7 +10,7 @@ heat_map <- function(
   ggplot() +
     geom_tile(
       df, 
-      mapping = aes(xvar, yvar, fill = map_var)
+      mapping = aes({{xvar}}, {{yvar}}, fill = {{map_var}})
     ) +
     scale_y_reverse() +
     scale_fill_wa_c(
@@ -18,19 +18,46 @@ heat_map <- function(
       reverse = T
     )+
     coord_cartesian(expand = FALSE)+
-    
+    xlab('')+
+    ylab('')+
     geom_vline(
       rbr_df %>% filter(site == {{lake}}),
-      mapping = aes(xintercept = xvar),
+      mapping = aes(xintercept = {{xvar}}),
       linewidth = 2,
-      linetype = 'dotted',
+      #linetype = 'dotted',
       color = 'black',
       alpha = 0.2
     )+
     facet_wrap(
-      ~{{facet}}, 
+      ~year, 
       #scales = 'free', 
       ncol = 2
     )+
-    theme_classic()
+    theme_classic()+
+    theme(
+      legend.position = 'bottom'
+    )
 }
+
+
+
+heat_map(
+    df = pld_DO, 
+    xvar = yday, 
+    yvar = depth, 
+    map_var = do_umol, 
+    lake = 'paint.deep', 
+    #facet = year
+)
+
+
+#save plot
+ggsave(
+  here(
+    'output/data_viz/heat_maps/horz_orientation/pld_do_horz.png'
+  ),
+  dpi = 300,
+  height = 3,
+  width = 5,
+  units = 'in'
+)

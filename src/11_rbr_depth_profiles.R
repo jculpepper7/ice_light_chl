@@ -2069,13 +2069,13 @@ ggplot(kb_chl_a, aes(yday, depth, fill = chl_a)) +
   )+
   theme_classic()
 
-ggsave(
-  here(
-    'output/data_viz/heat_maps/kb_chl_rb.png'
-    # 'output/data_viz/heat_maps/kb_chl_vir.png'
-  ),
-  dpi = 300,
-  height = 3,
-  width = 5,
-  units = 'in'
-)
+# ggsave(
+#   here(
+#     'output/data_viz/heat_maps/kb_chl_rb.png'
+#     # 'output/data_viz/heat_maps/kb_chl_vir.png'
+#   ),
+#   dpi = 300,
+#   height = 3,
+#   width = 5,
+#   units = 'in'
+# )
