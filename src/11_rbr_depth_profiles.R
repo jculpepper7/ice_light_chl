@@ -1,11 +1,12 @@
 library(tidyverse)
 library(here)
 library(wacolors)
+library(janitor)
 
-rbr <- read_csv(here::here('data/rbr/rbr_clean2.csv')) %>% 
+rbr <- read_csv(here::here('data/rbr/rbr_clean4.csv')) %>% 
   mutate(
     site = as.factor(site),
-    position = as.factor(position),
+    #position = as.factor(position),
     date2 = as.factor(date),
     year = as.factor(year),
     site_proper = as.factor(
@@ -37,7 +38,7 @@ rbr1_int <- depth_intervals(rbr,
                             vars = c(
                               "temp_c", 
                               "chl_a", 
-                              "do_mg_l", 
+                              "do_umol_l", 
                               "do_sat", 
                               "par",
                               "pressure"
@@ -576,18 +577,21 @@ ggplot(
 
 pl_s <- rbr_df %>% 
   filter(
-    site == 'paint.shallow'
+    site == 'paint.shallow',
+    d_int >= 0
   )
 
 pl_d <- rbr_df %>% 
   filter(
     site == 'paint.deep',
-    date != '2025-01-28'
+    date != '2025-01-28',
+    d_int >= 0
   )
 
 kb <- rbr_df %>% 
   filter(
-    site == 'simcoe.deep'
+    site == 'simcoe.deep',
+    d_int >= 0
   )
 
 
@@ -652,7 +656,8 @@ temp_interp_pls <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1, 3.1, length.out = 200))
+  #tibble(depth = seq(0.6, 3.4, length.out = 200)) #Deths for rbr_clean3.csv
+  tibble(depth = seq(0, 3.9, length.out = 200)) #Depths for rbr_clean4.csv
 ) %>%
   group_by(date) %>%
   mutate(
@@ -707,11 +712,11 @@ estimate_temp_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$temp, xout = target_date)$y
 }
 
-estimate_temp_by_depth(
-  temp_interp_pls,
-  target_depth = 1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_temp_by_depth(
+#   temp_interp_pls,
+#   target_depth = 1, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pls_int_24 <- temp_interp_pls %>% 
@@ -768,16 +773,23 @@ ggplot() +
     mapping = aes(yday, depth, fill = temp)
   ) +
   scale_y_reverse() +
+  # scale_fill_stepsn(
+  #   n.breaks = 6, 
+  #   colours = viridis::viridis(6)
+  # )+
+  scale_fill_cmocean(name = 'balance', ('Temp'))+
   # scale_fill_gradient2(
-  #   midpoint = 4,
+  #   midpoint = 3.9,
+  #   # high = scales::muted("red"),
+  #   # low = scales::muted("blue")
   #   high = scales::muted("red"),
   #   low = scales::muted("blue")
   # ) +
   # scale_fill_viridis_c()+
-  scale_fill_wa_c(
-    palette = 'lopez',
-    reverse = T
-  )+
+  # scale_fill_wa_c(
+  #   palette = 'lopez',
+  #   reverse = T
+  # )+
   coord_cartesian(expand = FALSE)+
   # geom_point(
   #   rbr_df %>% filter(site == 'paint.shallow'),
@@ -797,14 +809,14 @@ ggplot() +
   #   shape = 1,
   #   color = 'black'
   # )+
-  geom_vline(
-    rbr_df %>% filter(site == 'paint.shallow'),
-    mapping = aes(xintercept = yday),
-    linewidth = 2,
-    linetype = 'dotted',
-    color = 'black',
-    alpha = 0.2
-  )+
+  # geom_vline(
+  #   rbr_df %>% filter(site == 'paint.shallow'),
+  #   mapping = aes(xintercept = yday),
+  #   linewidth = 2,
+  #   linetype = 'dotted',
+  #   color = 'black',
+  #   alpha = 0.2
+  # )+
   facet_wrap(
     ~year, 
     #scales = 'free', 
@@ -839,7 +851,8 @@ estimate_DO_by_date <- function(df, target_date, target_depth) {
   # approx() is one way to do a linear interpolation
   approx(
     data_for_date$d_int, 
-    data_for_date$do_mg_l,
+    #data_for_date$do_mg_l,
+    data_for_date$do_umol_l,
     xout = target_depth
   )$y
 }
@@ -856,7 +869,8 @@ DO_interp_pls <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1, 3, length.out = 200))
+  #tibble(depth = seq(0.6, 3.4, length.out = 200))
+  tibble(depth = seq(0, 3.9, length.out = 200)) #see note on temp for depth diffs
 ) %>%
   group_by(date) %>%
   mutate(
@@ -897,11 +911,11 @@ estimate_DO_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$do_umol, xout = target_date)$y
 }
 
-estimate_DO_by_depth(
-  DO_interp_pls,
-  target_depth = 1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_DO_by_depth(
+#   DO_interp_pls,
+#   target_depth = 1, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pls_int_24 <- DO_interp_pls %>% 
@@ -969,16 +983,16 @@ ggplot(pls_DO, aes(yday, depth, fill = do_umol)) +
   )+
   theme_classic()
 
-ggsave(
-  here(
-    'output/data_viz/heat_maps/pls_do_rb.png'
-    #'output/data_viz/heat_maps/pls_do_vir.png'
-  ),
-  dpi = 300,
-  height = 3,
-  width = 5,
-  units = 'in'
-)
+#' ggsave(
+#'   here(
+#'     'output/data_viz/heat_maps/pls_do_rb.png'
+#'     #'output/data_viz/heat_maps/pls_do_vir.png'
+#'   ),
+#'   dpi = 300,
+#'   height = 3,
+#'   width = 5,
+#'   units = 'in'
+#' )
 
 # 1c. Paint Lake Shallow - Chlorophyll-a ------------------------------------
 
@@ -1013,7 +1027,8 @@ chl_a_interp_pls <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1, 3, length.out = 200))
+  #tibble(depth = seq(0.6, 3.4, length.out = 200))
+  tibble(depth = seq(0, 3.9, length.out = 200))
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1054,11 +1069,11 @@ estimate_chl_a_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$chl_a, xout = target_date)$y
 }
 
-estimate_chl_a_by_depth(
-  chl_a_interp_pls,
-  target_depth = 1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_chl_a_by_depth(
+#   chl_a_interp_pls,
+#   target_depth = 1, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pls_int_24 <- chl_a_interp_pls %>% 
@@ -1172,7 +1187,8 @@ temp_interp_pld <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1.1, 13.3, length.out = 500))
+  #tibble(depth = seq(0.8, 13.6, length.out = 500)) #depths for rbr_clean3.csv
+  tibble(depth = seq(0.1, 14.1, length.out = 500)) #depths for rbr_clean4.csv
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1213,11 +1229,11 @@ estimate_temp_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$temp, xout = target_date)$y
 }
 
-estimate_temp_by_depth(
-  temp_interp_pld,
-  target_depth = 1.1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_temp_by_depth(
+#   temp_interp_pld,
+#   target_depth = 1.1, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pld_int_24 <- temp_interp_pld %>% 
@@ -1312,7 +1328,8 @@ estimate_DO_by_date <- function(df, target_date, target_depth) {
   # approx() is one way to do a linear interpolation
   approx(
     data_for_date$d_int, 
-    data_for_date$do_mg_l,
+    #data_for_date$do_mg_l,
+    data_for_date$do_umol_l,
     xout = target_depth
   )$y
 }
@@ -1329,7 +1346,9 @@ DO_interp_pld <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1.1, 13.3, length.out = 500))
+  #tibble(depth = seq(0.8, 13.6, length.out = 500)) #rbr3
+  tibble(depth = seq(0.1, 14.1, length.out = 500)) #rbr4
+  
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1370,11 +1389,11 @@ estimate_DO_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$do_umol, xout = target_date)$y
 }
 
-estimate_DO_by_depth(
-  DO_interp_pld,
-  target_depth = 1.1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_DO_by_depth(
+#   DO_interp_pld,
+#   target_depth = 0.8, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pld_int_24 <- DO_interp_pld %>% 
@@ -1485,7 +1504,9 @@ chl_a_interp_pld <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(1.1, 13.3, length.out = 500))
+  #tibble(depth = seq(0.8, 13.6, length.out = 500))
+  tibble(depth = seq(0.1, 14.1, length.out = 500))
+  
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1526,11 +1547,11 @@ estimate_chl_a_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$chl_a, xout = target_date)$y
 }
 
-estimate_chl_a_by_depth(
-  chl_a_interp_pld,
-  target_depth = 1.1, 
-  target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
-)
+# estimate_chl_a_by_depth(
+#   chl_a_interp_pld,
+#   target_depth = 1.1, 
+#   target_date = seq(ymd("2024-01-26"), ymd("2024-01-31"), by = 1)
+# )
 
 #split data into years
 pld_int_24 <- chl_a_interp_pld %>% 
@@ -1643,7 +1664,7 @@ temp_interp_kb <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(0.85, 31.2, length.out = 500))
+  tibble(depth = seq(0, 32.1, length.out = 500))
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1684,11 +1705,11 @@ estimate_temp_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$temp, xout = target_date)$y
 }
 
-estimate_temp_by_depth(
-  temp_interp_kb,
-  target_depth = 0.85, 
-  target_date = seq(ymd("2024-02-01"), ymd("2024-02-06"), by = 1)
-)
+# estimate_temp_by_depth(
+#   temp_interp_kb,
+#   target_depth = 0.85, 
+#   target_date = seq(ymd("2024-02-01"), ymd("2024-02-06"), by = 1)
+# )
 
 #split data into years
 kb_int_24 <- temp_interp_kb %>% 
@@ -1731,7 +1752,7 @@ temp_raster_kb_25 <- crossing(
 kb_temp <- temp_raster_kb_24 %>% 
   bind_rows(temp_raster_kb_25) %>% 
   mutate(
-    site = as.factor('Paint Lake - Deep'),
+    site = as.factor('Kempenfelt Bay'),
     year = as.factor(year(date)),
     yday = yday(date)
   )
@@ -1756,16 +1777,16 @@ ggplot(kb_temp, aes(yday, depth, fill = temp)) +
   )+
   theme_classic()
 
-ggsave(
-  here(
-    # 'output/data_viz/heat_maps/kb_temp_rb.png'
-    'output/data_viz/heat_maps/kb_temp_vir.png'
-  ),
-  dpi = 300,
-  height = 3,
-  width = 5,
-  units = 'in'
-)
+# ggsave(
+#   here(
+#     # 'output/data_viz/heat_maps/kb_temp_rb.png'
+#     'output/data_viz/heat_maps/kb_temp_vir.png'
+#   ),
+#   dpi = 300,
+#   height = 3,
+#   width = 5,
+#   units = 'in'
+# )
 
 # 3b. Kempenfelt Bay - Dissolved Oxygen ------------------------------------
 
@@ -1783,7 +1804,8 @@ estimate_DO_by_date <- function(df, target_date, target_depth) {
   # approx() is one way to do a linear interpolation
   approx(
     data_for_date$d_int, 
-    data_for_date$do_mg_l,
+    #data_for_date$do_mg_l,
+    data_for_date$do_umol_l,
     xout = target_depth
   )$y
 }
@@ -1800,7 +1822,9 @@ DO_interp_kb <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(0.85, 31.2, length.out = 500))
+  #tibble(depth = seq(0.6, 31.6, length.out = 500))
+  tibble(depth = seq(0, 32.1, length.out = 500))
+  
 ) %>%
   group_by(date) %>%
   mutate(
@@ -1841,11 +1865,11 @@ estimate_DO_by_depth <- function(df, target_depth, target_date) {
   approx(data_for_depth$date, data_for_depth$do_umol, xout = target_date)$y
 }
 
-estimate_DO_by_depth(
-  DO_interp_kb,
-  target_depth = 0.85, 
-  target_date = seq(ymd("2024-02-01"), ymd("2024-02-06"), by = 1)
-)
+# estimate_DO_by_depth(
+#   DO_interp_kb,
+#   target_depth = 0.85, 
+#   target_date = seq(ymd("2024-02-01"), ymd("2024-02-06"), by = 1)
+# )
 
 #split data into years
 kb_int_24 <- DO_interp_kb %>% 
@@ -1913,16 +1937,16 @@ ggplot(kb_DO, aes(yday, depth, fill = do_umol)) +
   )+
   theme_classic()
 
-ggsave(
-  here(
-    'output/data_viz/heat_maps/kb_do_rb.png'
-    # 'output/data_viz/heat_maps/kb_do_vir.png'
-  ),
-  dpi = 300,
-  height = 3,
-  width = 5,
-  units = 'in'
-)
+# ggsave(
+#   here(
+#     'output/data_viz/heat_maps/kb_do_rb.png'
+#     # 'output/data_viz/heat_maps/kb_do_vir.png'
+#   ),
+#   dpi = 300,
+#   height = 3,
+#   width = 5,
+#   units = 'in'
+# )
 
 # 3c. Kempenfelt Bay - Chlorophyll-a ------------------------------------
 
@@ -1956,7 +1980,7 @@ chl_a_interp_kb <- crossing(
   #ps: min = 2, max = 3
   #pd: min = 2, max = 15
   #kb: min = 2, max = 32
-  tibble(depth = seq(0.85, 31.2, length.out = 500))
+  tibble(depth = seq(0, 32.1, length.out = 500))
 ) %>%
   group_by(date) %>%
   mutate(
@@ -2079,3 +2103,64 @@ ggplot(kb_chl_a, aes(yday, depth, fill = chl_a)) +
 #   width = 5,
 #   units = 'in'
 # )
+
+
+# XX. Combine data --------------------------------------------------------
+
+#PLS join
+
+pls_full <- pls_temp %>% 
+  bind_cols(pls_chl_a, pls_DO) %>% 
+  select(
+   date =1,
+   depth = 2,
+   site = 4,
+   year = 5,
+   yday = 6,
+   3,
+   9, 
+   15
+  ) 
+
+#PLD join
+
+pld_full <- pld_temp %>% 
+  bind_cols(pld_chl_a, pld_DO) %>% 
+  select(
+    date =1,
+    depth = 2,
+    site = 4,
+    year = 5,
+    yday = 6,
+    3,
+    9, 
+    15
+  ) 
+
+#KB join
+
+kb_full <- kb_temp %>% 
+  bind_cols(kb_chl_a, kb_DO) %>% 
+  select(
+    date =1,
+    depth = 2,
+    site = 4,
+    year = 5,
+    yday = 6,
+    3,
+    9, 
+    15
+  ) 
+
+#Full interpolated df
+
+df_interp <- pls_full %>% 
+  bind_rows(
+    pld_full,
+    kb_full
+  )
+
+write_csv(
+  df_interp,
+  here('data/combined_data/interp_df2.csv')
+)

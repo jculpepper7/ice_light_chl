@@ -48,11 +48,11 @@ rbr24_clean <- rbr_24 %>%
     )
   ) %>% 
   #Remove the top meter of the water column.
-  group_by(site, date) %>% 
-  filter(
-    depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
-  ) %>% 
-  ungroup() %>% 
+  # group_by(site, date) %>% 
+  # filter(
+  #   depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
+  # ) %>% 
+  # ungroup() %>% 
   arrange(
     site, date
   )
@@ -82,11 +82,11 @@ rbr25_clean <- rbr_25 %>%
     )
   ) %>% 
   #Remove the top meter of the water column.
-  group_by(site, date) %>% 
-  filter(
-    depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
-  ) %>% 
-  ungroup() %>% 
+  # group_by(site, date) %>% 
+  # filter(
+  #   depth >= min(depth) + 0.25 & depth <= max(depth) - 0.25
+  # ) %>% 
+  # ungroup() %>% 
   arrange(
     site, date
   )
@@ -96,24 +96,24 @@ rbr25_clean <- rbr_25 %>%
 
 
 rbr_clean <- rbr24_clean %>% 
-  bind_rows(rbr25_clean) %>% 
-  group_by(site, year, date) %>% 
-  #Add a factor for top, mid, and bottom depths
-  #'top' = top meter, 'bottom' = bottom meter, all else = 'mid'
-  mutate(
-    position = as.factor(
-      if_else(
-        depth <= min(depth) + 1, 'top',
-        if_else(
-          depth >= max(depth) - 1, 'bottom', 'mid'
-        )
-      )
-    )
-  )
+  bind_rows(rbr25_clean) #%>% 
+  #' group_by(site, year, date) %>% 
+  #' #Add a factor for top, mid, and bottom depths
+  #' #'top' = top meter, 'bottom' = bottom meter, all else = 'mid'
+  #' mutate(
+  #'   position = as.factor(
+  #'     if_else(
+  #'       depth <= min(depth) + 1, 'top',
+  #'       if_else(
+  #'         depth >= max(depth) - 1, 'bottom', 'mid'
+  #'       )
+  #'     )
+  #'   )
+  #' )
 
 #**Write cleaned data to CSV----
 
-#write_csv(rbr_clean, here('data/rbr/rbr_clean2.csv'))
+write_csv(rbr_clean, here('data/rbr/rbr_clean3.csv'))
 
 # 5. Summarize water column averages --------------------------------------
 
