@@ -42,19 +42,21 @@ rbr <- rbr %>%
 
 
 # 3. Heat map function ----------------------------------------------------
-
+library(scales)
 heat_map <- function(
     df, 
     xvar, 
     yvar, 
-    yvar_line,
+    # yvar_line,
     map_var,    #This var is the color variable for the heat map (e.g., 'temp_c')
     lake,       #This var is for the site id (e.g., 'paint.shallow')
     facet,      #This var should just be 'year'
     col_dir,
     yaxis,
     map_col,     #This var is a map color from the 'cmocean' pckg
-    mid          #The midpoint for the red to blue color scheme
+    low,
+    mid,          #The midpoint for the red to blue color scheme
+    high
 ) {
   
   ggplot() +
@@ -65,16 +67,19 @@ heat_map <- function(
         ), 
       mapping = aes({{xvar}}, {{yvar}}, fill = {{map_var}})
     ) +
-    geom_line(
-      df %>% 
-        filter(
-          site == {{lake}}
-        ), 
-      mapping = aes({{xvar}}, {{yvar_line}}),
-    ) +
+    # geom_line(
+    #   df %>% 
+    #     filter(
+    #       site == {{lake}}
+    #     ), 
+    #   mapping = aes({{xvar}}, {{yvar_line}}),
+    #   color = 'black',
+    #   linewidth = 1.5,
+    #   alpha = 0.7
+    # ) +
     scale_y_reverse() +
     
-    scale_fill_cmocean(name = {{map_col}}, direction = col_dir)+
+    # scale_fill_cmocean(name = {{map_col}}, direction = col_dir)+
     
     # scale_fill_gradient2(
     #   low = cmocean("balance")(100)[15],
@@ -82,8 +87,42 @@ heat_map <- function(
     #   high = cmocean("balance")(100)[85],
     #   midpoint = {{mid}},
     # ) +
+    
+    scale_fill_gradientn(
+      colors = c(
+        #Cols for temp & chl-a
+        cmocean("balance")(100)[15],
+        cmocean("balance")(100)[50],
+        cmocean("balance")(100)[85]
+        #Cols for DO
+        # cmocean("balance")(100)[85],
+        # cmocean("balance")(100)[50],
+        # cmocean("balance")(100)[15]
+      ),
+      values = rescale(
+        c(
+          {{low}},
+          {{mid}},
+          {{high}}
+        )
+      ),
+      limits = c(
+        {{low}},
+        {{high}}
+      )
+    )+
+    
+    # scale_fill_gradientn(
+    #   colours = c("darkblue","white","darkred"),
+    #   values = 
+    #     c(4, (4-0.4786835)/(5.926296-0.4786835), 5.93)
+    #   ,
+    #   guide = "colorbar",
+    #   limits=c(0.46,5.93)
+    # )+
+    
     coord_cartesian(expand = FALSE)+
-    xlab('')+
+    xlab('Day of Year')+
     ylab({{yaxis}})+
     xlim(c(10, 90))+
     facet_wrap(
@@ -110,14 +149,18 @@ pls_temp <- heat_map(
     df = rbr, 
     xvar = yday, 
     yvar = depth,
-    yvar_line = z_temp4,
+    # yvar_line = z_temp4,
     map_var = temp, 
     lake = 'Paint Lake - Shallow',
     col_dir = 1,
     yaxis = 'Temperature \u00b0C',
-    map_col = 'thermal'
+    # map_col = 'balance',
+    low = min(rbr$temp),
+    mid = 4,
+    high = max(rbr$temp)
 )
 pls_temp
+  
   
 # save plot
 # ggsave(
@@ -136,13 +179,15 @@ pls_do <- heat_map(
   df = rbr, 
   xvar = yday, 
   yvar = depth,
-  yvar_line = z_do_high,
+  # yvar_line = z_do_high,
   map_var = do_mgL, 
   lake = 'Paint Lake - Shallow',
   col_dir = -1,
   yaxis = expression('Dissolved Oxygen  mg L'^-1),
-  map_col = 'thermal',
-  mid = 8
+  # map_col = 'thermal',
+  low = min(rbr$do_mgL),
+  mid = 8,
+  high = max(rbr$do_mgL)
 )
 
 #save plot
@@ -162,13 +207,15 @@ pls_chla <- heat_map(
   df = rbr, 
   xvar = yday, 
   yvar = depth,
-  yvar_line = z_chla,
+  # yvar_line = z_chla,
   map_var = chl_a, 
   lake = 'Paint Lake - Shallow',
   col_dir = 1,
   yaxis = expression('Chlorophyll-a mg L'^-1),
   map_col = 'thermal',
-  mid = 2
+  low = min(rbr$chl_a),
+  mid = 2,
+  high = max(rbr$chl_a)
 )
 
 #save plot
@@ -195,7 +242,10 @@ pld_temp <- heat_map(
   map_var = temp, 
   lake = 'Paint Lake - Deep',
   col_dir = 1,
-  yaxis = 'Temperature \u00b0C'
+  yaxis = 'Temperature \u00b0C',
+  low = min(rbr$temp),
+  mid = 4,
+  high = max(rbr$temp)
 )
 
 #save plot
@@ -218,7 +268,10 @@ pld_do <- heat_map(
   map_var = do_mgL, 
   lake = 'Paint Lake - Deep',
   col_dir = -1,
-  yaxis = expression('Dissolved Oxygen  mg L'^-1)
+  yaxis = expression('Dissolved Oxygen  mg L'^-1),
+  low = min(rbr$do_mgL),
+  mid = 8,
+  high = max(rbr$do_mgL)
 )
 
 #save plot
@@ -241,7 +294,10 @@ pld_chla <- heat_map(
   map_var = chl_a, 
   lake = 'Paint Lake - Deep',
   col_dir = 1,
-  yaxis = expression('Chlorophyll-a mg L'^-1)
+  yaxis = expression('Chlorophyll-a mg L'^-1),
+  low = min(rbr$chl_a),
+  mid = 2,
+  high = max(rbr$chl_a)
 )
 
 #save plot
@@ -267,7 +323,10 @@ kb_temp <- heat_map(
   map_var = temp, 
   lake = 'Kempenfelt Bay',
   col_dir = 1,
-  yaxis = 'Temperature (\u00b0C)'
+  yaxis = 'Temperature (\u00b0C)',
+  low = min(rbr$temp),
+  mid = 4,
+  high = max(rbr$temp)
 )
 
 #save plot
@@ -290,7 +349,10 @@ kb_do <- heat_map(
   map_var = do_mgL, 
   lake = 'Kempenfelt Bay',
   col_dir = -1,
-  yaxis = expression('Dissolved Oxygen  mg L'^-1)
+  yaxis = expression('Dissolved Oxygen  mg L'^-1),
+  low = min(rbr$do_mgL),
+  mid = 8,
+  high = max(rbr$do_mgL)
 )
 
 #save plot
@@ -304,7 +366,7 @@ kb_do <- heat_map(
 #   units = 'in'
 # )
 
-# 6c. KB - Chl-a ----------------------------------------------------------
+# **6c. KB - Chl-a --------------------------------------------------------
 
 kb_chla <- heat_map(
   df = rbr, 
@@ -313,7 +375,10 @@ kb_chla <- heat_map(
   map_var = chl_a, 
   lake = 'Kempenfelt Bay',
   col_dir = 1,
-  yaxis = expression('Chlorophyll-a mg L'^-1)
+  yaxis = expression('Chlorophyll-a mg L'^-1),
+  low = min(rbr$chl_a),
+  mid = 2,
+  high = max(rbr$chl_a)
 )
 
 #save plot
@@ -398,7 +463,8 @@ pls_ice <- ggplot(
       ~.*1.6667/100, 
       # name=expression(mu * E * m^{-2} * s^{-1}),
       name = 'PAR Transmitted %',
-      labels = scales::percent
+      labels = scales::percent,
+      breaks = seq(0,1,by = 0.2),
     )
   )+
   labs(fill = 'Ice Type')+
@@ -459,7 +525,8 @@ pld_ice <- ggplot(
       ~.*1.6667/100, 
       #name=expression(mu * E * m^{-2} * s^{-1}),
       name = 'PAR Transmitted %',
-      labels = scales::percent
+      labels = scales::percent,
+      breaks = seq(0,1,by = 0.2),
     )
     
   )+
@@ -521,6 +588,7 @@ kb_ice <- ggplot(
       ~.*1.6667/100, 
       #name=expression(mu * E * m^{-2} * s^{-1}),
       name = 'PAR Transmitted %',
+      breaks = seq(0,1,by = 0.2),
       labels = scales::percent
     )
   )+
@@ -552,30 +620,36 @@ kb_ice <- ggplot(
 pls_ice/pls_temp/pls_do/pls_chla + 
   plot_layout(
     axes = "collect"
+  ) &
+  theme(
+    legend.justification = 'left'
   )
 
 #save plot
-ggsave(
-  here(
-    'output/data_viz/heat_maps/combined_plots/pls_combined_perc_par_test2.png'
-  ),
-  dpi = 300,
-  height = 8,
-  width = 7,
-  units = 'in'
-)
+# ggsave(
+#   here(
+#     'output/data_viz/heat_maps/combined_plots/fig6.png'
+#   ),
+#   dpi = 300,
+#   height = 8,
+#   width = 7,
+#   units = 'in'
+# )
 
 # **8b. PLD ---------------------------------------------------------------
 
 pld_ice/pld_temp/pld_do/pld_chla + 
   plot_layout(
     axes = "collect"
+  ) &
+  theme(
+    legend.justification = 'left'
   )
 
 #save plot
 # ggsave(
 #   here(
-#     'output/data_viz/heat_maps/combined_plots/pld_combined_perc_par.png'
+#     'output/data_viz/heat_maps/combined_plots/fig5.png'
 #   ),
 #   dpi = 300,
 #   height = 8,
@@ -588,12 +662,15 @@ pld_ice/pld_temp/pld_do/pld_chla +
 kb_ice/kb_temp/kb_do/kb_chla + 
   plot_layout(
     axes = "collect"
+  ) &
+  theme(
+    legend.justification = 'left'
   )
 
 # save plot
 # ggsave(
 #   here(
-#     'output/data_viz/heat_maps/combined_plots/kb_combined_perc_par.png'
+#     'output/data_viz/heat_maps/combined_plots/fig4.png'
 #   ),
 #   dpi = 300,
 #   height = 8,
