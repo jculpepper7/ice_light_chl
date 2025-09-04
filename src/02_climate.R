@@ -1,6 +1,7 @@
 library(here)
 library(tidyverse)
 library(janitor)
+library(patchwork)
 
 # 1. import data ----------------------------------------------------------
 
@@ -117,15 +118,23 @@ met_data_clean <- beatrice %>%
 
 # 3. Visualize daily data -------------------------------------------------
 
-ggplot(data = met_data_clean)+
-  geom_point(aes(x = date, y = snow_cm))+
-  facet_wrap(~station, ncol = 1)
+#Read in data above
+met_data_clean <- read_csv(here('data/combined_data/met_clean.csv')) %>% 
+  mutate(
+    station = if_else(
+      station == 'beatrice', as.factor('Paint Lake'), as.factor('Kempenfelt Bay')
+    )
+  )
 
-ggplot(data = met_data_clean)+
-  #total snow doesn't seem to have sufficient data, 
-  #so use snow on ground
-  geom_point(aes(x = date, y = snow_on_grnd_cm))+ 
-  facet_wrap(~station, ncol = 1)
+# ggplot(data = met_data_clean)+
+#   geom_point(aes(x = date, y = snow_cm))+
+#   facet_wrap(~station, ncol = 1)
+# 
+# ggplot(data = met_data_clean)+
+#   #total snow doesn't seem to have sufficient data, 
+#   #so use snow on ground
+#   geom_point(aes(x = date, y = snow_on_grnd_cm))+ 
+#   facet_wrap(~station, ncol = 1)
 
 
 # 4. Seasonal summaries ----------------------------------------------------
@@ -163,78 +172,78 @@ met_seasonal <- met_data_clean %>%
     wind_km_h = mean(spd_of_max_gust_km_h, na.rm = T)
   )
 
-ggplot(data = met_seasonal %>% filter(season == 'fall'))+
-  geom_point(
-    aes(x = w_year, y = mean_temp_c, color = station)
-  )+
-  geom_smooth(
-    aes(x = w_year, y = mean_temp_c, color = station), 
-    method = 'lm', 
-    se = F
-  )
-  
-ggplot(data = met_seasonal %>% filter(season == 'winter'))+
-  geom_point(
-    aes(x = w_year, y = mean_temp_c, color = station)
-  )+
-  geom_smooth(
-    aes(x = w_year, y = mean_temp_c, color = station), 
-    method = 'lm', 
-    se = F
-  )
-
-ggplot(data = met_seasonal %>% filter(season == 'spring'))+
-  geom_point(
-    aes(x = w_year, y = mean_temp_c, color = station)
-  )+
-  geom_smooth(
-    aes(x = w_year, y = mean_temp_c, color = station), 
-    #method = 'lm', 
-    se = F
-  )
-
-#Plot temp and precip variables
-ggplot(data = met_seasonal)+
-  geom_point(
-    # aes(x = year, y = mean_temp_c, color = station)
-    # aes(x = year, y = min_temp_c, color = station)
-    # aes(x = year, y = max_temp_c, color = station)
-    # aes(x = year, y = snow_on_grnd_cm, color = station)
-    # aes(x = year, y = total_precip_mm, color = station) #Precip seems far too low at both stations given the snow on ground amounts (in cm)
-    # aes(x = year, y = heat_deg_days_c, color = station)
-    aes(x = w_year, y = cool_deg_days_c, color = station)
-  )+
-  geom_smooth(
-    # aes(x = year, y = mean_temp_c, color = station),
-    # aes(x = year, y = min_temp_c, color = station),
-    # aes(x = year, y = max_temp_c, color = station),
-    # aes(x = year, y = snow_on_grnd_cm, color = station),
-    # aes(x = year, y = total_precip_mm, color = station),
-    # aes(x = year, y = heat_deg_days_c, color = station),
-    aes(x = w_year, y = cool_deg_days_c, color = station),
-    method = 'lm', 
-    se = F
-  ) +
-  facet_wrap(
-    ~season, 
-    ncol = 1,
-    labeller = labeller(season = 
-                          c(
-                            'fall' = 'Fall',
-                            'winter' = 'Winter',
-                            'spring' = 'Spring'
-                          ))
-  )+
-  theme_classic()+
-  scale_color_manual(values = c('#E1BE6A','#40B0A6'))+
-  xlab('')+
-  #Change to match variable above
-  ylab('Cooling Degree Days (\u00B0C)')+ #degree symbol = \u00B0
-  theme(
-    legend.title = element_blank()
-  )
-  
-# ggsave(
+# ggplot(data = met_seasonal %>% filter(season == 'fall'))+
+#   geom_point(
+#     aes(x = w_year, y = mean_temp_c, color = station)
+#   )+
+#   geom_smooth(
+#     aes(x = w_year, y = mean_temp_c, color = station), 
+#     method = 'lm', 
+#     se = F
+#   )
+#   
+# ggplot(data = met_seasonal %>% filter(season == 'winter'))+
+#   geom_point(
+#     aes(x = w_year, y = mean_temp_c, color = station)
+#   )+
+#   geom_smooth(
+#     aes(x = w_year, y = mean_temp_c, color = station), 
+#     method = 'lm', 
+#     se = F
+#   )
+# 
+# ggplot(data = met_seasonal %>% filter(season == 'spring'))+
+#   geom_point(
+#     aes(x = w_year, y = mean_temp_c, color = station)
+#   )+
+#   geom_smooth(
+#     aes(x = w_year, y = mean_temp_c, color = station), 
+#     #method = 'lm', 
+#     se = F
+#   )
+# 
+# #Plot temp and precip variables
+# ggplot(data = met_seasonal)+
+#   geom_point(
+#     # aes(x = year, y = mean_temp_c, color = station)
+#     # aes(x = year, y = min_temp_c, color = station)
+#     # aes(x = year, y = max_temp_c, color = station)
+#     # aes(x = year, y = snow_on_grnd_cm, color = station)
+#     # aes(x = year, y = total_precip_mm, color = station) #Precip seems far too low at both stations given the snow on ground amounts (in cm)
+#     # aes(x = year, y = heat_deg_days_c, color = station)
+#     aes(x = w_year, y = cool_deg_days_c, color = station)
+#   )+
+#   geom_smooth(
+#     # aes(x = year, y = mean_temp_c, color = station),
+#     # aes(x = year, y = min_temp_c, color = station),
+#     # aes(x = year, y = max_temp_c, color = station),
+#     # aes(x = year, y = snow_on_grnd_cm, color = station),
+#     # aes(x = year, y = total_precip_mm, color = station),
+#     # aes(x = year, y = heat_deg_days_c, color = station),
+#     aes(x = w_year, y = cool_deg_days_c, color = station),
+#     method = 'lm', 
+#     se = F
+#   ) +
+#   facet_wrap(
+#     ~season, 
+#     ncol = 1,
+#     labeller = labeller(season = 
+#                           c(
+#                             'fall' = 'Fall',
+#                             'winter' = 'Winter',
+#                             'spring' = 'Spring'
+#                           ))
+#   )+
+#   theme_classic()+
+#   scale_color_manual(values = c('#E1BE6A','#40B0A6'))+
+#   xlab('')+
+#   #Change to match variable above
+#   ylab('Cooling Degree Days (\u00B0C)')+ #degree symbol = \u00B0
+#   theme(
+#     legend.title = element_blank()
+#   )
+#   
+# # ggsave(
 #   here('output/data_viz/cooling_degree_days.pdf'),
 #   dpi = 300,
 #   width = 5,
@@ -269,9 +278,9 @@ season_anom <- met_seasonal %>%
   ) %>% 
   mutate(
     rain_anom_cm = round(rain_anom_cm, digits = 2),
-    mean_anom_temp_c = round(mean_anom_temp_c, digits = 0),
+    mean_anom_temp_c = round(mean_anom_temp_c, digits = 1),
     wind_anom_km_h = round(wind_anom_km_h, digits = 2),
-    snow_anom_cm = round(snow_anom_cm, digits = 0)
+    snow_anom_cm = round(snow_anom_cm, digits = 1)
   )
 # %>% 
 #   ungroup() %>% 
@@ -284,7 +293,192 @@ season_anom <- met_seasonal %>%
 
 #Seasonal anomaly viz
 
-ggplot(data = season_anom %>% filter(season == 'winter'))+
+
+# **5a. KB temp -----------------------------------------------------------
+
+kb_temp_anom <- ggplot(
+  data = season_anom %>% 
+    filter(
+      season == 'winter',
+      station == 'Kempenfelt Bay'
+    )
+)+
+  geom_bar(
+    aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
+    stat = 'identity',
+    show.legend = F,
+    alpha = 0.5
+  )+
+  geom_text(
+    aes(
+      x = w_year,
+      y = mean_anom_temp_c,
+      label = mean_anom_temp_c,
+      vjust = 0.5 - sign(mean_anom_temp_c)/2
+    ),
+    size = 2.5
+  )+
+  geom_hline(yintercept=0, size=0.5)+
+  scale_fill_manual(values=c('blue','red'))+
+  scale_x_continuous(breaks = c(2005,2010,2015,2020,2025))+
+  theme_classic()+
+  xlab('')+
+  #Change to match variable above
+  ylab('Temperature Anomaly (\u00B0C)')+ #Temp. Anomaly (\u00B0C)
+  labs(title = 'Kempenfelt Bay')+
+  theme(
+    text = element_text(size = 15),
+    plot.title = element_text(hjust = 0.5)
+  )+
+  ylim(c(-5.5,5.5))
+  
+
+kb_temp_anom
+
+# **5b. PL temp -----------------------------------------------------------
+
+pl_temp_anom <- ggplot(
+  data = season_anom %>% 
+    filter(
+      season == 'winter',
+      station == 'Paint Lake'
+    )
+)+
+  geom_bar(
+    aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
+    stat = 'identity',
+    show.legend = F,
+    alpha = 0.5
+  )+
+  geom_text(
+    aes(
+      x = w_year,
+      y = mean_anom_temp_c,
+      label = mean_anom_temp_c,
+      vjust = 0.5 - sign(mean_anom_temp_c)/2
+    ),
+    size = 2.5
+  )+
+  geom_hline(yintercept=0, size=0.5)+
+  scale_fill_manual(values=c('blue','red'))+
+  scale_x_continuous(breaks = c(2005,2010,2015,2020,2025))+
+  theme_classic()+
+  xlab('')+
+  #Change to match variable above
+  ylab('Temperature Anomaly (\u00B0C)')+ #Temp. Anomaly (\u00B0C)
+  labs(title = 'Paint Lake')+
+  theme(
+    text = element_text(size = 15),
+    plot.title = element_text(hjust = 0.5)
+  )+
+  ylim(c(-5.5,5.5))
+
+pl_temp_anom
+
+# **5c. KB snow -----------------------------------------------------------
+
+kb_snow_anom <- ggplot(
+  data = season_anom %>% 
+    filter(
+      season == 'winter',
+      station == 'Kempenfelt Bay'
+    )
+)+
+  geom_bar(
+    aes(x = w_year, y = snow_anom_cm, fill = col_4),
+    stat = 'identity',
+    show.legend = F,
+    alpha = 0.5
+  )+
+  geom_text(
+    aes(
+      x = w_year,
+      y = snow_anom_cm,
+      label = snow_anom_cm,
+      vjust = 0.5 - sign(snow_anom_cm)/2
+    ),
+    size = 2.5
+  )+
+  geom_hline(yintercept=0, size=0.5)+
+  scale_fill_manual(values=c('red','blue'))+
+  scale_x_continuous(breaks = c(2005,2010,2015,2020,2025))+
+  theme_classic()+
+  xlab('')+
+  #Change to match variable above
+  ylab('Snow Amonaly (cm)')+ 
+  theme(
+    text = element_text(size = 15)
+  )+
+  ylim(c(-25,25))
+
+kb_snow_anom
+
+# **5d. PL snow -----------------------------------------------------------
+
+pl_snow_anom <- ggplot(
+  data = season_anom %>% 
+    filter(
+      season == 'winter',
+      station == 'Paint Lake'
+    )
+)+
+  geom_bar(
+    aes(x = w_year, y = snow_anom_cm, fill = col_4),
+    stat = 'identity',
+    show.legend = F,
+    alpha = 0.5
+  )+
+  geom_text(
+    aes(
+      x = w_year,
+      y = snow_anom_cm,
+      label = snow_anom_cm,
+      vjust = 0.5 - sign(snow_anom_cm)/2
+    ),
+    size = 2.5
+  )+
+  geom_hline(yintercept=0, size=0.5)+
+  scale_fill_manual(values=c('red','blue'))+
+  scale_x_continuous(breaks = c(2005,2010,2015,2020,2025))+
+  theme_classic()+
+  xlab('')+
+  #Change to match variable above
+  ylab('Snow Amonaly (cm)')+ 
+  theme(
+    text = element_text(size = 15)
+  )+
+  ylim(c(-25,25))
+
+pl_snow_anom
+
+
+# **5e. Combine the anomaly plots -----------------------------------------
+
+p1 <- (kb_temp_anom+pl_temp_anom)+
+  plot_layout(axis_titles = 'collect')
+
+p2 <- (kb_snow_anom+pl_snow_anom)+
+  plot_layout(axis_titles = 'collect')
+
+p1/p2+
+  plot_annotation(tag_levels = 'a')&
+  theme(
+    plot.tag = element_text(size = 20, hjust = 0)
+  )
+
+# ggsave(
+#   here('output/data_viz/climate_viz/fig1.png'),
+#   dpi = 300,
+#   width = 9,
+#   height = 7,
+#   units = 'in'
+# )
+
+# **5f. Facet plot (old version) ------------------------------------------
+
+
+temp_anom <- ggplot(data = season_anom %>% filter(season == 'winter'))+
+# snow_anom <- ggplot(data = season_anom %>% filter(season == 'winter'))+
   geom_bar(
     aes(x = w_year, y = mean_anom_temp_c, fill = col_1),
     # aes(x = w_year, y = min_anom_temp_c, fill = col_2),
@@ -299,14 +493,24 @@ ggplot(data = season_anom %>% filter(season == 'winter'))+
   )+
   geom_text(
     aes(
-      x = w_year, 
-      y = mean_anom_temp_c, 
+      x = w_year,
+      y = mean_anom_temp_c,
       label = mean_anom_temp_c,
       vjust = 0.5 - sign(mean_anom_temp_c)/2
     ),
     size = 3.5
-    #position = position_dodge(width = 0.9) 
+    #position = position_dodge(width = 0.9)
   )+
+  # geom_text(
+  #   aes(
+  #     x = w_year, 
+  #     y = snow_anom_cm, 
+  #     label = snow_anom_cm,
+  #     vjust = 0.5 - sign(snow_anom_cm)/2
+  #   ),
+  #   size = 3.5
+  #   #position = position_dodge(width = 0.9) 
+  # )+
   geom_hline(yintercept=0, size=0.5)+
   facet_wrap(
     ~station,
@@ -317,16 +521,20 @@ ggplot(data = season_anom %>% filter(season == 'winter'))+
                             'beatrice' = 'Paint Lake'
                           ))
   )+
-  # scale_fill_manual(values=c('red','blue'))+
-  
+  #scale_fill_manual(values=c('red','blue'))+
   scale_fill_manual(values=c('blue','red'))+
+  scale_x_continuous(breaks = c(2005,2010,2015,2020,2025))+
   theme_classic()+
   xlab('')+
   #Change to match variable above
-  ylab('Mean Temp. Anomaly (\u00B0C)')+
+  ylab('')+ #Temp. Anomaly (\u00B0C)
   theme(
     text = element_text(size = 35)
   )
+temp_anom
+snow_anom
+
+temp_anom+snow_anom
 
 ggsave(
   here('output/data_viz/climate_viz/snow_anom_winter_2025.06.22.png'),

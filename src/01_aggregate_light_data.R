@@ -13,6 +13,7 @@ library(scales)
 #devtools::install_github("CoryMcCartan/wacolors")
 library(wacolors)
 library(ggstatsplot)
+library(patchwork)
 
 # 1. Import data ----------------------------------------------------
 
@@ -532,8 +533,14 @@ mean_tbl_df <- comp_tbl_df %>%
 
 # 7. Scatter plots --------------------------------------------------------
 
+#Read in necessary data
+par_sum_wide <- read_csv(here('data/combined_data/par_ice.csv')) %>% 
+  mutate(
+    site = as.factor(site),
+    year = as.factor(year)
+  )
 
-# **7a. Plot function -----------------------------------------------------
+ # **7a. Plot function -----------------------------------------------------
 
 plt_func <- function(
     plt_df, 
@@ -564,16 +571,20 @@ plt_func <- function(
       labels = c('Paint - Deep', 'Paint - Shallow', 'Kempenfelt Bay')
     )+
     theme(
-      legend.position = 'inside',
-      legend.position.inside = c(0.8, 0.8),
+      legend.position = 'bottom',
+      # legend.position.inside = c(0.75, 0.85),
       legend.box = 'vertical',
       legend.margin = margin(),
       legend.title = element_blank(),
-      text = element_text(size = 35)
+      legend.key = element_rect(fill = 'transparent'),
+      text = element_text(size = 20),
+      # legend.position = 'none'
     )+
     #labs(x = 'Ice Thickness (cm)', y = expression('PAR w/o Snow (\u03bcmol ' ~m^-2 ~s^-1* ')'))+
     labs(x = x_name, y = y_name)+
+    # ylim(0,1)+
     scale_y_continuous(labels = percent_format())
+    
 }
 
 # **7b. PAR ~ Snow --------------------------------------------------------
@@ -609,38 +620,43 @@ plt_func <- function(
 
 library(ggpmisc)
 library(ggpubr)
+library(plotly)
 
-plt_func(
+PAR_v_snow <- plt_func(
   plt_df = par_sum_wide, 
   var_ind = snow_avg_cm, 
   var_dep = par_trans, 
   x_name = 'Snow Thickness (cm)', 
   y_name = 'PAR (%)'
 )+
-  # scale_y_log10()+
-  # scale_x_log10()+
-  theme(
-    legend.position = 'bottom'
-  )+
-  geom_smooth(
-    aes(x = snow_avg_cm, y = par_trans),
-    method = 'lm',
-    color = 'black',
-    se = T
-  )+
-  facet_wrap(~site)+
-  scale_x_continuous(trans = 'log1p', breaks = c(0, 3, 30))+
-  scale_y_continuous(trans = 'log1p', labels = scales::percent)
+  scale_x_continuous(breaks = c(0,5,10,15,20,25))
 
-test <- lm(data = par_sum_wide , log(par_trans)~log(snow_avg_cm))
-summary(test)
-ggsave(
-  here('output/data_viz/par_viz/log_par_pplt_2025.06.25.png'),
-  dpi = 300,
-  width = 8.5,
-  height = 6.5,
-  units = 'in'
-)
+
+#   geom_smooth(df = par_sum_wide, aes(x =snow_avg_cm, y = par_trans ),se = FALSE, method = "gam", formula = par_trans ~ s(snow_avg_cm))
+#   # scale_y_log10()+
+#   # scale_x_log10()+
+#   theme(
+#     legend.position = 'bottom'
+#   )+
+#   geom_smooth(
+#     aes(x = snow_avg_cm, y = par_trans),
+#     method = 'lm',
+#     color = 'black',
+#     se = T
+#   )+
+#   facet_wrap(~site)+
+#   scale_x_continuous(trans = 'log1p', breaks = c(0, 3, 30))+
+#   scale_y_continuous(trans = 'log1p', labels = scales::percent)
+# 
+# test <- lm(data = par_sum_wide , log(par_trans)~log(snow_avg_cm))
+# summary(test)
+# ggsave(
+#   here('output/data_viz/par_viz/log_par_pplt_2025.06.25.png'),
+#   dpi = 300,
+#   width = 8.5,
+#   height = 6.5,
+#   units = 'in'
+# )
 
 
 
@@ -650,21 +666,24 @@ ggsave(
 #      We use the PAR transmitted with no snow to determine what is 
 #      passing through the ice sheet alone
 
-plt_func(
+PAR_v_ice <- plt_func(
   plt_df = par_sum_wide, 
   var_ind = ice_sheet_cm, 
   var_dep = par_trans_no_snow, 
   x_name = 'Ice Sheet Thickness (cm)', 
   y_name = 'PAR (%)'
-)
+)+
+ scale_x_continuous(breaks = c(10,20,30,40,50,60))
 
-ggsave(
-  here('output/data_viz/par_viz/par_nosnow_ice_thick.png'),
-  dpi = 300,
-  width = 5.5,
-  height = 5.5,
-  units = 'in'
-)  
+#ggplotly(PAR_v_ice)
+
+# ggsave(
+#   here('output/data_viz/par_viz/par_nosnow_ice_thick.png'),
+#   dpi = 300,
+#   width = 5.5,
+#   height = 5.5,
+#   units = 'in'
+# )  
 
 
 # **7d. PAR ~ White ice thickness  ----------------------------------------
@@ -677,62 +696,86 @@ plt_func(
   y_name = 'PAR (%)'
 )
 
-ggsave(
-  here('output/data_viz/par_viz/par_white_ice.png'),
-  dpi = 300,
-  width = 5.5,
-  height = 5.5,
-  units = 'in'
-)  
+# ggsave(
+#   here('output/data_viz/par_viz/par_white_ice.png'),
+#   dpi = 300,
+#   width = 5.5,
+#   height = 5.5,
+#   units = 'in'
+# )  
 
 
 # **7e. PAR ~ White ice fraction ------------------------------------------
 
 
 
-plt_func(
+PAR_v_wht_perc <- plt_func(
   plt_df = par_sum_wide, 
-  var_ind = snow_avg_cm, 
-  var_dep = par_trans, 
-  x_name = 'Snow (cm)', 
+  var_ind = wht_ratio, 
+  var_dep = par_trans_no_snow, 
+  x_name = 'White Ice Fraction (%)', 
   y_name = 'PAR (%)'
 )+
+  scale_x_continuous(labels = scales::percent)
+# ggplotly(PAR_v_wht_perc)
   # scale_y_log10()+
   # scale_x_log10()+
-  theme(
-    legend.position = 'bottom'
-  )+
-  geom_smooth(
-    aes(x = snow_avg_cm, y = par_trans),
-    method = 'lm',
-    color = 'black',
-    se = T
-  )+
-  facet_wrap(
-    ~site,
-    labeller = labeller(site = 
-                          c(
-                            'simcoe.deep' = 'Kempenfelt Bay',
-                            'paint.shallow' = 'Paint Lake - Shallow',
-                            'paint.deep' = 'Paint Lake - Deep'
-                          ))
-  )+
-  scale_x_continuous(
-    trans = 'log1p', 
-    breaks = c(0,3,30), 
-    #labels = scales::percent
-  )+
-  scale_y_continuous(trans = 'log1p', labels = scales::percent)+
-  theme(panel.spacing = unit(2, 'lines'))
+  # theme(
+  #   legend.position = 'bottom'
+  # )+
+  # geom_smooth(
+  #   aes(x = snow_avg_cm, y = par_trans),
+  #   method = 'lm',
+  #   color = 'black',
+  #   se = T
+  # )+
+  # facet_wrap(
+  #   ~site,
+  #   labeller = labeller(site = 
+  #                         c(
+  #                           'simcoe.deep' = 'Kempenfelt Bay',
+  #                           'paint.shallow' = 'Paint Lake - Shallow',
+  #                           'paint.deep' = 'Paint Lake - Deep'
+  #                         ))
+  # )+
+  # scale_x_continuous(
+  #   trans = 'log1p', 
+  #   breaks = c(0,3,30), 
+  #   #labels = scales::percent
+  # )+
+  # scale_y_continuous(trans = 'log1p', labels = scales::percent)+
+  # theme(panel.spacing = unit(2, 'lines'))
 
 
 #par_wht + scale_x_continuous(labels = percent_format())
+# ggsave(
+#   here('output/data_viz/par_viz/par_trans_snow_log_all.png'),
+#   dpi = 300,
+#   width = 15.5,
+#   height = 8.5,
+#   units = 'in'
+# )  
+
+
+# ***Combine PAR plots ----------------------------------------------------
+
+(PAR_v_snow / PAR_v_ice / PAR_v_wht_perc) +
+  plot_annotation(tag_levels = 'a')+
+  plot_layout(
+    axis_titles = 'collect',
+    guides = 'collect'
+  )&
+  theme(
+    legend.position = 'bottom',
+    legend.text = element_text(size = 15),
+    legend.direction = 'vertical'
+  )
 
 ggsave(
-  here('output/data_viz/par_viz/par_trans_snow_log_all.png'),
+  here('output/data_viz/par_viz/fig3/fig3_xaxis.png'),
   dpi = 300,
-  width = 15.5,
-  height = 8.5,
+  width = 6.5,
+  height = 10.5,
   units = 'in'
 )  
 

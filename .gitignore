@@ -39,6 +39,7 @@ rsconnect/
 *.jpeg
 *.png
 *.xlsx
+*.svg
 <<<<<<< HEAD
 *.pdf
 =======
