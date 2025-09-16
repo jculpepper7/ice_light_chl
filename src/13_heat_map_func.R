@@ -6,6 +6,8 @@ library(here)
 library(cmocean)
 #library(cowplot)
 library(patchwork)
+library(scales)
+library(egg)
 
 # 2. Import data ----------------------------------------------------------
 
@@ -42,7 +44,7 @@ rbr <- rbr %>%
 
 
 # 3. Heat map function ----------------------------------------------------
-library(scales)
+
 heat_map <- function(
     df, 
     xvar, 
@@ -56,7 +58,9 @@ heat_map <- function(
     map_col,     #This var is a map color from the 'cmocean' pckg
     low,
     mid,          #The midpoint for the red to blue color scheme
-    high
+    high,
+    leg.title,
+    lake_name
 ) {
   
   ggplot() +
@@ -79,6 +83,7 @@ heat_map <- function(
     # ) +
     scale_y_reverse() +
     
+   
     # scale_fill_cmocean(name = {{map_col}}, direction = col_dir)+
     
     # scale_fill_gradient2(
@@ -89,6 +94,7 @@ heat_map <- function(
     # ) +
     
     scale_fill_gradientn(
+      name = {{leg.title}},
       colors = c(
         #Cols for temp & chl-a
         cmocean("balance")(100)[15],
@@ -131,12 +137,27 @@ heat_map <- function(
     )+
     theme_classic()+
     theme(
-      legend.position = 'right',
-      legend.title = element_blank(),
-      strip.text = element_blank()
+      #NOTE: For strip.text commands below
+      #Comment out lines 139-142 for PLD & PLS
+      strip.text = element_text(
+        size = 15,
+        margin = margin (b = 10)
+      ),
+      #Comment out line 144 for KB
+      # strip.text = element_blank(),
+      strip.background = element_blank(),
+      legend.title = element_text(
+        angle = -90,
+        margin = margin(l = 10),
+        hjust = 0.5
+      ),
+      legend.direction = 'vertical'
     )+
     guides(
-      fill = guide_colorbar(ticks.colour = NA)
+      fill = guide_colorbar(
+        ticks.colour = NA,
+        title.position = 'right'
+      )
     )
 }
 
@@ -153,13 +174,15 @@ pls_temp <- heat_map(
     map_var = temp, 
     lake = 'Paint Lake - Shallow',
     col_dir = 1,
-    yaxis = 'Temperature \u00b0C',
+    yaxis = 'Depth (m)',
     # map_col = 'balance',
     low = min(rbr$temp),
     mid = 4,
-    high = max(rbr$temp)
+    high = max(rbr$temp),
+    leg.title = 'Temperature \u00b0C',
+    lake_name = 'Paint Lake - Shallow'
 )
-pls_temp
+pls_temp 
   
   
 # save plot
@@ -183,11 +206,12 @@ pls_do <- heat_map(
   map_var = do_mgL, 
   lake = 'Paint Lake - Shallow',
   col_dir = -1,
-  yaxis = expression('Dissolved Oxygen  mg L'^-1),
+  yaxis = 'Depth (m)',
   # map_col = 'thermal',
   low = min(rbr$do_mgL),
   mid = 8,
-  high = max(rbr$do_mgL)
+  high = max(rbr$do_mgL),
+  leg.title = expression('Dissolved Oxygen  mg L'^-1)
 )
 
 #save plot
@@ -211,11 +235,12 @@ pls_chla <- heat_map(
   map_var = chl_a, 
   lake = 'Paint Lake - Shallow',
   col_dir = 1,
-  yaxis = expression('Chlorophyll-a mg L'^-1),
+  yaxis = 'Depth (m)',
   map_col = 'thermal',
   low = min(rbr$chl_a),
   mid = 2,
-  high = max(rbr$chl_a)
+  high = max(rbr$chl_a),
+  leg.title = expression('Chlorophyll-a \u03bcg L'^-1)
 )
 
 #save plot
@@ -242,10 +267,11 @@ pld_temp <- heat_map(
   map_var = temp, 
   lake = 'Paint Lake - Deep',
   col_dir = 1,
-  yaxis = 'Temperature \u00b0C',
+  yaxis = 'Depth (m)',
   low = min(rbr$temp),
   mid = 4,
-  high = max(rbr$temp)
+  high = max(rbr$temp),
+  leg.title = 'Temperature \u00b0C'
 )
 
 #save plot
@@ -268,10 +294,11 @@ pld_do <- heat_map(
   map_var = do_mgL, 
   lake = 'Paint Lake - Deep',
   col_dir = -1,
-  yaxis = expression('Dissolved Oxygen  mg L'^-1),
+  yaxis = 'Depth (m)',
   low = min(rbr$do_mgL),
   mid = 8,
-  high = max(rbr$do_mgL)
+  high = max(rbr$do_mgL),
+  leg.title = expression('Dissolved Oxygen  mg L'^-1)
 )
 
 #save plot
@@ -294,10 +321,11 @@ pld_chla <- heat_map(
   map_var = chl_a, 
   lake = 'Paint Lake - Deep',
   col_dir = 1,
-  yaxis = expression('Chlorophyll-a mg L'^-1),
+  yaxis = 'Depth (m)',
   low = min(rbr$chl_a),
   mid = 2,
-  high = max(rbr$chl_a)
+  high = max(rbr$chl_a),
+  leg.title = expression('Chlorophyll-a \u03bcg L'^-1)
 )
 
 #save plot
@@ -323,12 +351,13 @@ kb_temp <- heat_map(
   map_var = temp, 
   lake = 'Kempenfelt Bay',
   col_dir = 1,
-  yaxis = 'Temperature (\u00b0C)',
+  yaxis = 'Depth (m)',
   low = min(rbr$temp),
   mid = 4,
-  high = max(rbr$temp)
+  high = max(rbr$temp),
+  leg.title = 'Temperature \u00b0C'
 )
-
+kb_temp
 #save plot
 # ggsave(
 #   here(
@@ -349,10 +378,11 @@ kb_do <- heat_map(
   map_var = do_mgL, 
   lake = 'Kempenfelt Bay',
   col_dir = -1,
-  yaxis = expression('Dissolved Oxygen  mg L'^-1),
+  yaxis = 'Depth (m)',
   low = min(rbr$do_mgL),
   mid = 8,
-  high = max(rbr$do_mgL)
+  high = max(rbr$do_mgL),
+  leg.title = expression('Dissolved Oxygen  mg L'^-1)
 )
 
 #save plot
@@ -375,10 +405,11 @@ kb_chla <- heat_map(
   map_var = chl_a, 
   lake = 'Kempenfelt Bay',
   col_dir = 1,
-  yaxis = expression('Chlorophyll-a mg L'^-1),
+  yaxis = 'Depth (m)',
   low = min(rbr$chl_a),
   mid = 2,
-  high = max(rbr$chl_a)
+  high = max(rbr$chl_a),
+  leg.title = expression('Chlorophyll-a \u03bcg L'^-1)
 )
 
 #save plot
@@ -677,3 +708,366 @@ kb_ice/kb_temp/kb_do/kb_chla +
 #   width = 7,
 #   units = 'in'
 # )
+
+# **8d. TEMP --------------------------------------------------------------
+
+kb_temp/pld_temp/pls_temp + 
+  plot_annotation(
+    tag_levels = 'a'
+  )+
+  plot_layout(
+    axes = "collect",
+    guides = 'collect'
+  ) &
+  theme(
+    legend.justification = 'left'
+  )
+
+# save plot
+ggsave(
+  here(
+    'output/data_viz/heat_maps/combined_plots/plot_by_var/fig4_temp.png'
+  ),
+  dpi = 300,
+  height = 8,
+  width = 7,
+  units = 'in'
+)
+
+# **8e. DO ----------------------------------------------------------------
+
+kb_do/pld_do/pls_do + 
+  plot_annotation(
+    tag_levels = 'a'
+  )+
+  plot_layout(
+    axes = "collect",
+    guides = 'collect'
+  ) &
+  theme(
+    legend.justification = 'left'
+  )
+
+# save plot
+ggsave(
+  here(
+    'output/data_viz/heat_maps/combined_plots/plot_by_var/fig5_do.png'
+  ),
+  dpi = 300,
+  height = 8,
+  width = 7,
+  units = 'in'
+)
+
+# **8f. Chl-a -------------------------------------------------------------
+
+kb_chla/pld_chla/pls_chla +
+  plot_annotation(
+    tag_levels = 'a'
+  )+
+  plot_layout(
+    axes = "collect",
+    guides = 'collect'
+  ) &
+  theme(
+    legend.justification = 'left'
+  )
+
+# save plot
+ggsave(
+  here(
+    'output/data_viz/heat_maps/combined_plots/plot_by_var/fig6_chla.png'
+  ),
+  dpi = 300,
+  height = 8,
+  width = 7,
+  units = 'in'
+)
+
+
+# 9. Calculate daily temp, DO, can chl-a averages -------------------------
+
+
+# **9a. Temp --------------------------------------------------------------
+
+
+rbr_temp <- rbr %>% 
+  mutate(
+    date2 = as.factor(date)
+  ) %>% 
+  group_by(
+    date2,
+    site,
+    year
+  ) %>% 
+  summarise(
+    mean_temp = mean(temp, na.rm = T),
+    min_temp = min(temp, na.rm = T),
+    max_temp = max(temp, na.rm = T),
+    # temp_z_low = depth[temp == min(temp)],
+    # temp_z_high = depth[temp == max(temp)]
+  ) %>% 
+  arrange(
+    site, year
+  ) %>% 
+  mutate(
+    temp_diff = max_temp - min_temp,
+    date = ymd(date2),
+    yday = yday(date)
+  )
+
+rbr_temp_plt_df <- rbr_temp %>% 
+  pivot_longer(
+    cols = mean_temp:temp_diff,
+    names_to = 'temp_var',
+    values_to = 'temp_val'
+  )
+  
+rbr_temp_ts_plt <- ggplot(data = rbr_temp_plt_df)+
+  geom_line(
+    mapping = aes(x = yday, y = temp_val, color = temp_var),
+    size = 1.5,
+    alpha = 0.6
+  )+
+  facet_wrap(
+    ~site+year,
+    ncol = 2,
+    #scales = 'free'
+  )+
+  scale_color_viridis_d(
+    labels = c(
+      'Maximum',
+      'Mean',
+      'Minimum',
+      'Difference'
+    ),
+    name = 'Temperature\nVariable'
+  )+
+  theme_bw()+
+  ylab('Temperature \u00b0C')+
+  xlab('Day of Year')+
+  theme(
+    text = element_text(size = 15),
+    legend.box.margin = margin(r = 20)
+  )
+
+ggplotly(rbr_temp_ts_plt)
+
+tag_facet(rbr_temp_ts_plt)+
+  theme(
+    text = element_text(size = 15),
+    # legend.box.margin = margin(l = 25),
+    strip.text = element_text(size = 15)
+  )
+
+ggsave(
+  here('output/data_viz/heat_maps/combined_plots/plot_by_var/supp_to_fig4.png'),
+  dpi = 300,
+  width = 6.5,
+  height = 8,
+  units = 'in'
+)
+
+# **9b. Temp. summary table -----------------------------------------------
+
+temp_sum <- rbr_temp %>% 
+  group_by(site, year) %>% 
+  summarise(
+    mean = mean(mean_temp),
+    mean_max = mean(max_temp),
+    mean_min = mean(min_temp),
+    mean_diff = mean(temp_diff)
+  )
+
+# write_csv(
+#   temp_sum, 
+#   here('output/data_viz/heat_maps/combined_plots/plot_by_var/temp_sum.csv')
+# )
+  
+# **9c. DO --------------------------------------------------------------
+
+
+rbr_DO <- rbr %>% 
+  mutate(
+    date2 = as.factor(date)
+  ) %>% 
+  group_by(
+    date2,
+    site,
+    year
+  ) %>% 
+  summarise(
+    mean_DO = mean(do_mgL, na.rm = T),
+    min_DO = min(do_mgL, na.rm = T),
+    max_DO = max(do_mgL, na.rm = T)
+  ) %>% 
+  arrange(
+    site, year
+  ) %>% 
+  mutate(
+    O2_diff = max_DO - min_DO,
+    date = ymd(date2),
+    yday = yday(date)
+  )
+
+rbr_do_plt_df <- rbr_DO %>% 
+  pivot_longer(
+    cols = mean_DO:O2_diff,
+    names_to = 'DO_var',
+    values_to = 'DO_val'
+  )
+
+rbr_DO_ts_plt <- ggplot(data = rbr_do_plt_df)+
+  geom_line(
+    mapping = aes(x = yday, y = DO_val, color = DO_var),
+    size = 1.5,
+    alpha = 0.6
+  )+
+  facet_wrap(
+    ~site+year,
+    ncol = 2,
+    #scales = 'free'
+  )+
+  scale_color_viridis_d(
+    labels = c(
+      'Maximum',
+      'Mean',
+      'Minimum',
+      'Difference'
+    ),
+    name = 'Dissovled\nOxygen'
+  )+
+  theme_bw()+
+  ylab(expression(paste("Dissolved Oxygen (mg ", L^-1, ")")))+
+  xlab('Day of Year')+
+  theme(
+    text = element_text(size = 15),
+    legend.box.margin = margin(r = 20)
+  )
+
+ggplotly(rbr_DO_ts_plt)
+
+tag_facet(rbr_DO_ts_plt)+
+  theme(
+    text = element_text(size = 15),
+    # legend.box.margin = margin(l = 25),
+    strip.text = element_text(size = 15)
+  )
+
+ggsave(
+  here('output/data_viz/heat_maps/combined_plots/plot_by_var/supp_to_fig5.png'),
+  dpi = 300,
+  width = 6.5,
+  height = 8,
+  units = 'in'
+)
+
+# **9b. DO summary table -----------------------------------------------
+
+DO_sum <- rbr_DO %>% 
+  group_by(site, year) %>% 
+  summarise(
+    mean = mean(mean_DO),
+    mean_max = mean(max_DO),
+    mean_min = mean(min_DO),
+    mean_diff = mean(O2_diff)
+  )
+
+write_csv(
+  DO_sum,
+  here('output/data_viz/heat_maps/combined_plots/plot_by_var/DO_sum.csv')
+)
+
+# **9d. Chl-a --------------------------------------------------------------
+
+
+rbr_chla <- rbr %>% 
+  mutate(
+    date2 = as.factor(date)
+  ) %>% 
+  group_by(
+    date2,
+    site,
+    year
+  ) %>% 
+  summarise(
+    mean_chla = mean(chl_a, na.rm = T),
+    min_chla = min(chl_a, na.rm = T),
+    max_chla = max(chl_a, na.rm = T)
+  ) %>% 
+  arrange(
+    site, year
+  ) %>% 
+  mutate(
+    zchla_diff = max_chla - min_chla,
+    date = ymd(date2),
+    yday = yday(date)
+  )
+
+rbr_chla_plt_df <- rbr_chla %>% 
+  pivot_longer(
+    cols = mean_chla:zchla_diff,
+    names_to = 'chla_var',
+    values_to = 'chla_val'
+  )
+
+rbr_chla_ts_plt <- ggplot(data = rbr_chla_plt_df)+
+  geom_line(
+    mapping = aes(x = yday, y = chla_val, color = chla_var),
+    size = 1.5,
+    alpha = 0.6
+  )+
+  facet_wrap(
+    ~site+year,
+    ncol = 2,
+    #scales = 'free'
+  )+
+  scale_color_viridis_d(
+    labels = c(
+      'Maximum',
+      'Mean',
+      'Minimum',
+      'Difference'
+    ),
+    name = 'Chlorophyll-a'
+  )+
+  theme_bw()+
+  ylab(expression(paste("Chlorophyll-a (", mu, 'g', L^-1, ")")))+
+  xlab('Day of Year')+
+  theme(
+    text = element_text(size = 15),
+    legend.box.margin = margin(r = 20)
+  )
+
+ggplotly(rbr_chla_ts_plt)
+
+tag_facet(rbr_chla_ts_plt)+
+  theme(
+    text = element_text(size = 15),
+    # legend.box.margin = margin(l = 25),
+    strip.text = element_text(size = 15)
+  )
+
+ggsave(
+  here('output/data_viz/heat_maps/combined_plots/plot_by_var/supp_to_fig6.png'),
+  dpi = 300,
+  width = 6.5,
+  height = 8,
+  units = 'in'
+)
+
+# **9b. DO summary table -----------------------------------------------
+
+chla_sum <- rbr_chla %>% 
+  group_by(site, year) %>% 
+  summarise(
+    mean = mean(mean_chla),
+    mean_max = mean(max_chla),
+    mean_min = mean(min_chla),
+    mean_diff = mean(zchla_diff)
+  )
+
+write_csv(
+  chla_sum,
+  here('output/data_viz/heat_maps/combined_plots/plot_by_var/chla_sum.csv')
+)

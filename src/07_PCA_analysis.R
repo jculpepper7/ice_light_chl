@@ -33,8 +33,14 @@ ipc_clean <- ice_par_chl %>%
   ) %>% 
   #eliminate the individual depth measurements
   select(
-    1:22, 
-    72:77,
+    #Original values selected
+    # 1:22, 
+    # 72:77,
+    #Updated version - 2025.09.14
+    1:8,
+    10,11,13,15,
+    18:21,
+    72, 74:77,
     #rename total chl-a to give measurement
     chla_conc_ugL = total_conc_ug_l
   )
@@ -103,10 +109,10 @@ ipc_pca_df <- ipc_clean %>%
     ice_sheet_cm, 
     snow_avg_cm,
     par_trans,
-    par_trans_no_snow,
+    # par_trans_no_snow,
     blk_ratio,
     wht_ratio,
-    chla_conc_ugL,
+    #chla_conc_ugL,
     max_chl_depth
   )
 
@@ -135,10 +141,10 @@ rbr_pca_full <- rbr_clean %>%
     year,
     mean_temp_full,
     mean_do_full,
-    #mean_do_sat_full,
-    mean_par_up_full,
+    mean_do_sat_full,
+    #mean_par_up_full,
     #ADD RBR chl-a?
-    #mean_chl_a_full
+    mean_chl_a_full
   )
 
 # #Isolate surface measurments
@@ -193,7 +199,7 @@ rbr_pca_full <- rbr_clean %>%
 
 #**PCA Prep new----
 pca_prep <- ipc_pca_df %>% 
-  #full_join(chem_pca) %>% #LAEAVING OUT FOR NOW. 
+  #full_join(chem_pca) %>% #LEAVING OUT FOR NOW. 
                            #TOO MANY MISSING DATA POINTS FOR SIMCOE
   full_join(rbr_pca_full) %>% 
   arrange(site, date) %>% 
@@ -271,9 +277,15 @@ ggplot(par_scores, aes(x = PC1, y = PC2)) +
     yend = PC2),
     arrow = arrow(length = unit(0.1, "inches"))) +
   # Label the arrows
-  geom_text(aes(label = variable),
-            nudge_x = -0.08,
-            nudge_y = -0.1) +
+  # geom_text(aes(label = variable),
+  #           nudge_x = 0.08,
+  #           nudge_y = 0.1) +
+  geom_text_repel(
+    aes(x = PC1, y = PC2, label = variable),
+    box.padding = unit(0.5, 'lines'),
+    point.padding = unit(0.5, 'lines'),
+    segment.color = NA
+  )+
   # Draw points representing the sites
   geom_point(data = site_scores,
              aes(x = PC1,
@@ -282,15 +294,23 @@ ggplot(par_scores, aes(x = PC1, y = PC2)) +
                  shape = year),
              size = 3,
              alpha = 0.7) +
+  scale_color_wa_d(
+    palette = 'rainier',
+    which = c('lake', 'lodge', 'ground'),
+    labels = c('Paint Lake (Deep)','Paint Lake (Shallow)','Kempenfelt Bay')
+  )+
   theme_classic() +
   theme(
-    axis.line = element_blank()) +
-  ggtitle("Principal Component Analysis, scaling 2")+
-  xlab(paste0("PCA1 (49%)"))+ 
-  ylab(paste0("PCA2 (16%)"))
+    axis.line = element_blank(),
+    legend.title = element_blank(),
+    legend.position = 'bottom'
+  ) +
+  # ggtitle("Principal Component Analysis, scaling 2")+
+  xlab(paste0("PCA1 (51%)"))+ 
+  ylab(paste0("PCA2 (22%)"))
 
 ggsave(
-  here('output/data_viz/pca_wyear_2025.06.12.png'),
+  here('output/data_viz/pca_wyear_2025.09.14.pdf'),
   dpi = 300,
   width = 8,
   height = 8,
