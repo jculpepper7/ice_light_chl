@@ -40,6 +40,12 @@ rsconnect/
 *.png
 *.xlsx
 *.svg
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.shp
+*.shx
 <<<<<<< HEAD
 *.pdf
 =======
